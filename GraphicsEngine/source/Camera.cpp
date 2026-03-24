@@ -23,9 +23,9 @@ Camera::Camera(CameraParams cameraParams)
 	UpdateVectors();
 }
 
-void Camera::MoveCamera(Utils::Direction direction, float deltaTime)
+void Camera::MoveCamera(Utils::Direction direction, float frameTime)
 {
-	float velocity = movementSpeed * deltaTime;
+	float velocity = movementSpeed * frameTime;
 
 	switch (direction)
 	{

@@ -13,7 +13,7 @@ class Camera
 public:
 	Camera(CameraParams cameraParams);
 	~Camera() {}
-	void MoveCamera(Utils::Direction direction, float deltaTime);
+	void MoveCamera(Utils::Direction direction, float frameTime);
 	void RotateCamera(float xOffset, float yOffset, GLboolean constrainPitch = true);
 	void Zoom(float yOffset);
 
