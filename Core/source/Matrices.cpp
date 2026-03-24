@@ -491,7 +491,7 @@ namespace CoreMath
 		);
 	}
 
-	Vec3 MultiplyPoint(const Vec3& vec, const Mat4& mat)
+	Vec3 MultiplyMat4Point(const Mat4& mat, const Vec3& vec)
 	{
 		return Vec3(
 			mat._11 * vec.x + mat._12 * vec.y + mat._13 * vec.z + mat._14,
@@ -501,7 +501,7 @@ namespace CoreMath
 
 	}
 
-	Vec3 MultiplyVector(const Vec3& vec, const Mat4& mat)
+	Vec3 MultiplyMat4Vec3(const Mat4& mat, const Vec3& vec)
 	{
 		return Vec3(
 			mat._11 * vec.x + mat._12 * vec.y + mat._13 * vec.z,
@@ -510,7 +510,7 @@ namespace CoreMath
 		);
 	}
 
-	Vec3 MultiplyVector(const Vec3& vec, const Mat3& mat)
+	Vec3 MultiplyMat3Vec3(const Mat3& mat, const Vec3& vec)
 	{
 		return Vec3(
 			mat._11 * vec.x + mat._12 * vec.y + mat._13 * vec.z,

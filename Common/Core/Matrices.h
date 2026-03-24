@@ -184,9 +184,9 @@ namespace CoreMath
 	Mat4 AxisAngle(const Vec3& axis, float angle);
 	Mat3 AxisAngle3x3(const Vec3& axis, float angle);
 
-	Vec3 MultiplyPoint(const Vec3& vec, const Mat4& mat);
-	Vec3 MultiplyVector(const Vec3& vec, const Mat4& mat);
-	Vec3 MultiplyVector(const Vec3& vec, const Mat3& mat);
+	Vec3 MultiplyMat4Point(const Mat4& mat, const Vec3& vec);
+	Vec3 MultiplyMat4Vec3(const Mat4& mat, const Vec3& vec);
+	Vec3 MultiplyMat3Vec3(const Mat3& mat, const Vec3& vec);
 
 	Mat4 Transform(const Vec3& scale, const Vec3& eulerRotation, 
 		const Vec3& translate);
