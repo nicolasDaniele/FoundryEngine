@@ -11,13 +11,9 @@ class IGraphics
 public:
     virtual ~IGraphics() = default;
 
-    virtual unsigned int CreateShaderProgram(
-        const char* vertexShaderPath,
+    virtual uint32_t CreateShaderProgram(const char* vertexShaderPath,
         const char* fragmentShaderPath) = 0;
 
-    virtual void DrawDebugLines(
-        const Vec3* vertices,
-        int vertexCount,
-        const Mat4& vp,
-        unsigned int shader) = 0;
+    virtual void DrawDebugLines(const Vec3* vertices, int vertexCount,
+        uint32_t shaderProgram, Vec3 color = Vec3(1.0f, 1.0f, 1.0f)) = 0;
 };

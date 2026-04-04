@@ -128,11 +128,13 @@
     <ClInclude Include="source\Geometry3D.h" />
     <ClInclude Include="source\MathDefinitions.h" />
     <ClInclude Include="source\Matrices.h" />
+    <ClInclude Include="source\Utils.h" />
     <ClInclude Include="source\Vectors.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\Geometry3D.cpp" />
     <ClCompile Include="source\Matrices.cpp" />
+    <ClCompile Include="source\Utils.cpp" />
     <ClCompile Include="source\Vectors.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

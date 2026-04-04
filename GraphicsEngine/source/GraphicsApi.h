@@ -10,6 +10,7 @@
 #include "IGraphics.h"
 #include "GraphicsTypes.h"
 #include "GraphicsData.h"
+#include "Utils.h"
 
 using Vec3 = CoreMath::Vec3;
 
@@ -41,7 +42,8 @@ private:
 
 extern "C"
 {
-	GRAPHICS_API Graphics* GetGraphicsEngine(/*GLFWwindow* context, */CameraParams cameraParams);
+	using namespace Utils;
+	GRAPHICS_API Graphics* GetGraphicsEngine(CameraParams cameraParams);
 	GRAPHICS_API void DestroyGraphicsEngine(Graphics* graphicsEngineToDestroy);
 
 	GRAPHICS_API MeshRenderer* CreateMeshRenderer(Graphics* graphics, MeshType meshType,
@@ -51,4 +53,9 @@ extern "C"
 										const char* vertexShaderPath = "", 
 										const char* fragmentShaderPath = "");
 	GRAPHICS_API void UpdateMeshRendererPosition(MeshRenderer* meshRenderer, Vec3 newPosition);
+
+	GRAPHICS_API void RotateCamera(Graphics* graphics, float xOffset, float yOffset);
+	GRAPHICS_API void CameraOrbit(Graphics* graphics, Vec3 target, float distance, float xOffset, float yOffset, float frameTime, float smoothSpeed);
+	GRAPHICS_API void MoveCamera(Graphics* graphics, Utils::Direction direction, float franeTime);
+	GRAPHICS_API void CameraFollow(Graphics* graphics, Vec3 target, float distance, float frameTime, float smoothSpeed);
 }

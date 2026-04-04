@@ -13,8 +13,11 @@ class Camera
 public:
 	Camera(CameraParams cameraParams);
 	~Camera() {}
-	void MoveCamera(Utils::Direction direction, float frameTime);
-	void RotateCamera(float xOffset, float yOffset, GLboolean constrainPitch = true);
+
+	void Move(Utils::Direction direction, float frameTime);
+	void Follow(Vec3 target, float distance, float frameTime, float smoothSpeed);
+	void Rotate(float xOffset, float yOffset, GLboolean constrainPitch = true);
+	void Orbit(Vec3 target, float distance, float xOffset, float yOffset, float frameTime, float smoothSpeed);
 	void Zoom(float yOffset);
 
 	Mat4 GetViewMatrix();
@@ -33,11 +36,14 @@ private:
 	Vec3 right;
 	Vec3 worldUp;
 	float yaw;
+	float targetYaw;
 	float pitch;
+	float targetPitch;
 	float movementSpeed;
 	float sensitivity;
 	float zoomAmount;
 
 	void UpdateVectors();
+	void UpdateVectors(Vec3 newForward);
 };
 

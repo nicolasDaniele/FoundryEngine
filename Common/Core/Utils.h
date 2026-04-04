@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Vectors.h"
+
 namespace Utils
 {
     template <typename T>
@@ -10,6 +12,9 @@ namespace Utils
         if (value > max)
             value = max;
     }
+
+    float Lerp(float start, float end, float t);
+    CoreMath::Vec3 LerpVec3(CoreMath::Vec3 start, CoreMath::Vec3 end, float t);
 
     enum Direction
     {

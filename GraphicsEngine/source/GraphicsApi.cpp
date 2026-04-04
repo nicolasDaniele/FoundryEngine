@@ -8,6 +8,7 @@
 #include "MeshFactory.h"
 #include "Camera.h"
 #include "ShaderLoader.h"
+#include "GraphicsApi.h"
 
 Graphics::Graphics(CameraParams cameraParams)
 {
@@ -167,5 +168,25 @@ extern "C"
 	GRAPHICS_API void UpdateMeshRendererPosition(MeshRenderer* meshRenderer, Vec3 newPosition)
 	{
 		meshRenderer->SetPosition(newPosition);
+	}
+
+	GRAPHICS_API void RotateCamera(Graphics* graphics, float xOffset, float yOffset)
+	{
+		graphics->GetCamera()->Rotate(xOffset, yOffset);
+	}
+
+	GRAPHICS_API void CameraOrbit(Graphics* graphics, Vec3 target, float distance, float xOffset, float yOffset, float frameTime, float smoothSpeed)
+	{
+		graphics->GetCamera()->Orbit(target, distance, xOffset, yOffset, frameTime, smoothSpeed);
+	}
+
+	GRAPHICS_API void MoveCamera(Graphics* graphics, Utils::Direction direction, float franeTime)
+	{
+		graphics->GetCamera()->Move(direction, franeTime);
+	}
+
+	void CameraFollow(Graphics* graphics, Vec3 target, float distance, float frameTime, float smoothSpeed)
+	{
+		graphics->GetCamera()->Follow(target, distance, frameTime, smoothSpeed);
 	}
 }
