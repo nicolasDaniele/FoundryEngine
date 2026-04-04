@@ -15,6 +15,11 @@ const int HEIGHT = 600;
 
 const char* FLAT_VS_PATH = "Assets/Shaders/FlatModel.vs";
 const char* FLAT_FS_PATH = "Assets/Shaders/FlatModel.fs";
+const char* TEXTURED_VS_PATH = "Assets/Shaders/TexturedModel.vs";
+const char* TEXTURED_FS_PATH = "Assets/Shaders/TexturedModel.fs";
+
+const char* WOOD_TEXTURE_PATH = "Assets/Textures/wood.jpg";
+const char* ARCADE_TEXTURE_PATH = "Assets/Textures/arcade.png";
 
 float lastMouseXPos = WIDTH / 2.0f;
 float lastMouseYPos = HEIGHT / 2.0f;
@@ -83,19 +88,23 @@ int main()
 	cameraParams.position = Vec3(0.0f, 1.5f, 16.0f);
 
 	graphics = GetGraphicsEngine(cameraParams);
-	// Break if grahics == nullptr
+	// TODO: Break if grahics == nullptr
 
-	MeshRenderer* ballRenderer = CreateMeshRenderer(graphics, MeshType::M_SPHERE,
+
+	MeshRenderer* ballRenderer = CreateMeshRenderer(graphics, MeshType::M_SPHERE, ShaderType::S_COLOR,
 		ballPosition,
 		ballSize,
 		Vec3(0.9f, 0.2f, 0.0f), // Color
 		FLAT_VS_PATH, FLAT_FS_PATH);
 
-	MeshRenderer* floorRenderer = CreateMeshRenderer(graphics, MeshType::M_CUBE,
+	MeshRenderer* floorRenderer = CreateMeshRenderer(graphics, MeshType::M_CUBE, ShaderType::S_TEXTURE,
 		floorPosition,
 		floorSize,
 		Vec3(0.2f, 0.8f, 0.2f), // Color
-		FLAT_VS_PATH, FLAT_FS_PATH);
+		TEXTURED_VS_PATH, TEXTURED_FS_PATH);
+
+	//LoadTextureToMeshRenderer(WOOD_TEXTURE_PATH, ballRenderer);
+	LoadTextureToMeshRenderer(WOOD_TEXTURE_PATH, floorRenderer);
 
 	// ------------------- END GRAHICS SETUP ------------------- \\
 

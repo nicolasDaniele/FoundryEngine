@@ -1,6 +1,5 @@
 #include "Utils.h"
 
-
 namespace Utils
 {
     float Lerp(float start, float end, float t)

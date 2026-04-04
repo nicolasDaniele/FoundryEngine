@@ -6,6 +6,5 @@ public:
 	TextureLoader() {}
 	~TextureLoader() {}
 
-	GLuint GetTextureID(std::string texFileName);
+	GLuint LoadTexture(std::string texFileName);
 };
-

@@ -8,7 +8,7 @@
 #include "MeshFactory.h"
 #include "Camera.h"
 #include "ShaderLoader.h"
-#include "GraphicsApi.h"
+#include "TextureLoader.h"
 
 Graphics::Graphics(CameraParams cameraParams)
 {
@@ -144,14 +144,14 @@ extern "C"
 		delete graphicsEngine;
 	}
 
-	// @TODO: Receive int instead of MeshType
+	// @TODO: Receive int instead of MeshType and ShaderType, and break if the received value is invalid
 	GRAPHICS_API MeshRenderer* CreateMeshRenderer(Graphics* graphics, MeshType meshType,
-		Vec3 position, Vec3 scale, Vec3 color,
+		ShaderType shaderType, Vec3 position, Vec3 scale, Vec3 color,
 		const char* vertexShaderPath, const char* fragmentShaderPath)
 	{
 		Mesh mesh = MeshFactory::CreateMesh(meshType, color);
 		MeshBuffer* meshBuffer = new MeshBuffer();
-		meshBuffer->LoadMeshData(mesh);
+		meshBuffer->LoadMeshData(mesh, shaderType);
 
 		MeshRenderer* newMeshRenderer = new MeshRenderer(meshBuffer, position, scale);
 
@@ -185,8 +185,23 @@ extern "C"
 		graphics->GetCamera()->Move(direction, franeTime);
 	}
 
-	void CameraFollow(Graphics* graphics, Vec3 target, float distance, float frameTime, float smoothSpeed)
+	GRAPHICS_API void CameraFollow(Graphics* graphics, Vec3 target, float distance, float frameTime, float smoothSpeed)
 	{
 		graphics->GetCamera()->Follow(target, distance, frameTime, smoothSpeed);
+	}
+
+	GRAPHICS_API int LoadTextureToMeshRenderer(const char* textureFileName, MeshRenderer* meshRenderer)
+	{
+		TextureLoader textureLoader;
+		 int textureID = textureLoader.LoadTexture(textureFileName);
+		 if (textureID == -1)
+		 {
+			 std::cout << "[GraphicsApi] Failed to load texture: " << textureFileName << std::endl;
+			 return -1;
+		 }
+
+		 meshRenderer->SetTexture(textureID);
+		 
+		 return textureID;
 	}
 }

@@ -14,7 +14,7 @@ Camera::Camera(CameraParams cameraParams)
 		cameraParams.width / cameraParams.height,
 		cameraParams.nearPlane, cameraParams.farPlane);
 
-	// ToDo: Make these parameters fields in cameraParams
+	// TODO: Make these parameters fields in cameraParams
 	yaw = targetYaw = -90.0f;
 	pitch = targetPitch = 0.0f;
 	movementSpeed = 2.5f;

@@ -1,4 +1,5 @@
 #include <glad/glad.h>
+#include <iostream>
 #include "MeshRenderer.h"
 #include "Mesh.h"
 #include "MeshBuffer.h"
@@ -17,6 +18,17 @@ void MeshRenderer::Draw(const Mat4& vp)
 	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, modelMat.asArray);
 
+	if (textureID == -1)
+	{
+		std::cout << "[MeshRenderer] No Texture Assigned" << std::endl;
+	}
+	else
+	{
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glUniform1i(glGetUniformLocation(shader, "Texture"), 0);
+	}
+
 	meshBuffer->Bind();
 	glDrawElements(GL_TRIANGLES, meshBuffer->GetIndexCount(),
 		GL_UNSIGNED_INT, nullptr);
@@ -32,6 +44,11 @@ void MeshRenderer::SetShaderProgram(uint32_t _shader)
 void MeshRenderer::SetMeshBuffer(MeshBuffer* _meshBuffer)
 {
 	meshBuffer = _meshBuffer;
+}
+
+void MeshRenderer::SetTexture(uint32_t _textureID)
+{
+	textureID = _textureID;
 }
 
 Vec3 MeshRenderer::GetPosition() const

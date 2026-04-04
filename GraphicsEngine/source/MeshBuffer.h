@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "GraphicsTypes.h"
 
 struct Mesh;
 
@@ -10,7 +11,7 @@ public:
     MeshBuffer();
     ~MeshBuffer();
 
-    void LoadMeshData(const Mesh& mesh);
+    void LoadMeshData(const Mesh& mesh, ShaderType shaderType);
     void Bind();
     void Unbind();
     void Draw() const;
