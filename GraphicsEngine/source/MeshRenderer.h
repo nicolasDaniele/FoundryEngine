@@ -23,6 +23,7 @@ public:
 
 	void SetShaderProgram(uint32_t _shader);
 	void SetMeshBuffer(MeshBuffer* _meshBuffer);
+	void SetTexture(uint32_t _textureID);
 
 	Vec3 GetPosition() const;
 	void SetPosition(const Vec3& _position);
@@ -33,4 +34,5 @@ private:
 	uint32_t shader = 0;
 	Vec3 position, scale;
 	float rotation;
+	uint32_t textureID = -1;
 };

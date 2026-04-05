@@ -1,6 +1,8 @@
 #include "Geometry3D.h"
 #include "MathDefinitions.h"
 
+#include <iostream>
+
 namespace CoreGeometry
 {
 
@@ -110,8 +112,8 @@ namespace CoreGeometry
 			const float* orientation = &obb.orientation.asArray[i * 3];
 			Vec3 axis(
 				orientation[0],
-				orientation[1],
-				orientation[2]);
+				orientation[3],
+				orientation[6]);
 
 			float distance = Dot(dir, axis);
 			if (distance > obb.halfExtents.asArray[i])
@@ -134,21 +136,21 @@ namespace CoreGeometry
 
 		for (int i = 0; i < 3; ++i)
 		{
-			const float* orientation = &obb.orientation.asArray[i * 3];
+			/*const float* orientation = &obb.orientation.asArray[i * 3];
 			Vec3 axis(
 				orientation[0],
 				orientation[1], 
-				orientation[2]);
+				orientation[2]);*/
+			Vec3 axis(obb.orientation.asArray[i * 3],
+				obb.orientation.asArray[i * 3 + 1],
+				obb.orientation.asArray[i * 3 + 2]);
 
 			float distance = Dot(dir, axis);
+
 			if (distance > obb.halfExtents.asArray[i])
-			{
 				distance = obb.halfExtents.asArray[i];
-			}
 			if (distance < -obb.halfExtents.asArray[i])
-			{
 				distance = -obb.halfExtents.asArray[i];
-			}
 
 			result = result + (axis * distance);
 		}

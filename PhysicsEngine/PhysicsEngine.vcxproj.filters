@@ -15,34 +15,37 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="source\Geometry3D.h">
+    <ClInclude Include="source\PhysicsSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="source\Matrices.h">
+    <ClInclude Include="source\Rigidbody.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="source\Vectors.h">
+    <ClInclude Include="source\RigidbodyVolume.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="source\MathDefinitions.h">
+    <ClInclude Include="source\PhysicsApi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="source\Utils.h">
+    <ClInclude Include="source\Collisions3D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="source\Geometry3D.cpp">
+    <ClCompile Include="source\PhysicsSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\Matrices.cpp">
+    <ClCompile Include="source\RigidbodyVolume.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\Vectors.cpp">
+    <ClCompile Include="source\PhysicsApi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="source\Utils.cpp">
+    <ClCompile Include="source\Collisions3D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
   </ItemGroup>
 </Project>

@@ -16,7 +16,7 @@ MeshBuffer::~MeshBuffer()
 	if (vao) glDeleteVertexArrays(1, &vao);
 }
 
-void MeshBuffer::LoadMeshData(const Mesh& mesh)
+void MeshBuffer::LoadMeshData(const Mesh& mesh, ShaderType shaderType)
 {
     indexCount = static_cast<uint32_t>(mesh.indices.size());
 
@@ -57,21 +57,27 @@ void MeshBuffer::LoadMeshData(const Mesh& mesh)
         (void*)offsetof(Vertex, normal)
     );
 
-    // color
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(
-        2, 3, GL_FLOAT, GL_FALSE,
-        sizeof(Vertex),
-        (void*)offsetof(Vertex, color)
-    );
-
-    // texcoord
-   /* glEnableVertexAttribArray(3);
-    glVertexAttribPointer(
-        3, 2, GL_FLOAT, GL_FALSE,
-        sizeof(Vertex),
-        (void*)offsetof(Vertex, texCoord)
-    );*/
+    switch (shaderType)
+    {
+    case S_COLOR:
+        // color
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(
+            2, 3, GL_FLOAT, GL_FALSE,
+            sizeof(Vertex),
+            (void*)offsetof(Vertex, color)
+        );
+        break;
+    case S_TEXTURE:
+        // texcoord
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(
+            3, 2, GL_FLOAT, GL_FALSE,
+            sizeof(Vertex),
+            (void*)offsetof(Vertex, texCoord)
+        );
+        break;
+    }
 
     glBindVertexArray(0);
 }
@@ -86,16 +92,16 @@ void MeshBuffer::Unbind()
     glBindVertexArray(0);
 }
 
-void MeshBuffer::Draw() const
-{
-	glBindVertexArray(vao);
-	glDrawElements(
-		GL_TRIANGLES,
-		indexCount,
-		GL_UNSIGNED_INT,
-		nullptr
-	);
-}
+//void MeshBuffer::Draw() const
+//{
+//	glBindVertexArray(vao);
+//	glDrawElements(
+//		GL_TRIANGLES,
+//		indexCount,
+//		GL_UNSIGNED_INT,
+//		nullptr
+//	);
+//}
 
 uint32_t MeshBuffer::GetIndexCount() const
 {

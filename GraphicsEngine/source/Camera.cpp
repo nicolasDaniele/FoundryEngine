@@ -14,18 +14,19 @@ Camera::Camera(CameraParams cameraParams)
 		cameraParams.width / cameraParams.height,
 		cameraParams.nearPlane, cameraParams.farPlane);
 
-	yaw = -90.0f;
-	pitch = 0.0f;
+	// TODO: Make these parameters fields in cameraParams
+	yaw = targetYaw = -90.0f;
+	pitch = targetPitch = 0.0f;
 	movementSpeed = 2.5f;
-	sensitivity = 0.5f;
+	sensitivity = 0.2f;
 	zoomAmount = 45.0f;
 
 	UpdateVectors();
 }
 
-void Camera::MoveCamera(Utils::Direction direction, float deltaTime)
+void Camera::Move(Utils::Direction direction, float frameTime)
 {
-	float velocity = movementSpeed * deltaTime;
+	float velocity = movementSpeed * frameTime;
 
 	switch (direction)
 	{
@@ -46,7 +47,20 @@ void Camera::MoveCamera(Utils::Direction direction, float deltaTime)
 	}
 }
 
-void Camera::RotateCamera(float xOffset, float yOffset, GLboolean constrainPitch)
+void Camera::Follow(Vec3 target, float distance, float frameTime, float smoothSpeed)
+{
+	Vec3 idealPosition;
+	idealPosition.x = target.x - distance * COS(DEG2RAD(yaw)) * COS(DEG2RAD(pitch));
+	idealPosition.y = target.y + distance * SIN(DEG2RAD(pitch));
+	idealPosition.z = target.z - distance * SIN(DEG2RAD(yaw)) * COS(DEG2RAD(pitch));
+
+	float t = 1.0f - exp(-smoothSpeed * frameTime);
+	position = Utils::LerpVec3(position, idealPosition, t);
+
+	UpdateVectors(target - position);
+}
+
+void Camera::Rotate(float xOffset, float yOffset, GLboolean constrainPitch)
 {
 	xOffset *= sensitivity;
 	yOffset *= sensitivity;
@@ -60,10 +74,22 @@ void Camera::RotateCamera(float xOffset, float yOffset, GLboolean constrainPitch
 	UpdateVectors();
 }
 
-void Camera::Zoom(const float yOffset)
+void Camera::Orbit(Vec3 target, float distance, float xOffset, float yOffset, float frameTime, float smoothSpeed)
 {
-	zoomAmount -= yOffset;
-	Utils::Clamp(zoomAmount, 1.0f, 45.0f);
+	targetYaw += xOffset * sensitivity;
+	targetPitch += yOffset * sensitivity;
+
+	Utils::Clamp(targetPitch, -89.0f, 89.0f);
+
+	float t = 1.0f - exp(-smoothSpeed * frameTime);
+	yaw = Utils::Lerp(yaw, targetYaw, t);
+	pitch = Utils::Lerp(pitch, targetPitch, t);
+
+	position.x = target.x - distance * COS(DEG2RAD(yaw)) * COS(DEG2RAD(pitch));
+	position.y = target.y + distance * SIN(DEG2RAD(pitch));
+	position.z = target.z - distance * SIN(DEG2RAD(yaw)) * COS(DEG2RAD(pitch));
+
+	UpdateVectors(target - position);
 }
 
 void Camera::UpdateVectors()
@@ -72,10 +98,23 @@ void Camera::UpdateVectors()
 	fwd.x = COS(DEG2RAD(yaw)) * COS(DEG2RAD(pitch));
 	fwd.y = SIN(DEG2RAD(pitch));
 	fwd.z = SIN(DEG2RAD(yaw)) * COS(DEG2RAD(pitch));
-	forward = CoreMath::Normalized(fwd);
 
+	forward = CoreMath::Normalized(fwd);
 	right = CoreMath::Normalized(CoreMath::Cross(forward, worldUp));
 	up = CoreMath::Normalized(CoreMath::Cross(right, forward));
+}
+
+void Camera::UpdateVectors(Vec3 newForward)
+{
+	forward = CoreMath::Normalized(newForward);
+	right = CoreMath::Normalized(CoreMath::Cross(forward, worldUp));
+	up = CoreMath::Normalized(CoreMath::Cross(right, forward));
+}
+
+void Camera::Zoom(const float yOffset)
+{
+	zoomAmount -= yOffset;
+	Utils::Clamp(zoomAmount, 1.0f, 45.0f);
 }
 
 Mat4 Camera::GetViewMatrix()
