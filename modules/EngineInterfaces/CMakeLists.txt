@@ -1,0 +1,3 @@
+add_library(EngineInterfaces INTERFACE)
+
+target_include_directories(EngineInterfaces INTERFACE include)
