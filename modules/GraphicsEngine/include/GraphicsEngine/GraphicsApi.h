@@ -5,6 +5,7 @@
 #include "EngineInterfaces/IGraphics.h"
 #include "GraphicsEngine/MeshRenderer.h"
 
+using Vec2 = CoreMath::Vec2;
 using Vec3 = CoreMath::Vec3;
 
 class Camera;

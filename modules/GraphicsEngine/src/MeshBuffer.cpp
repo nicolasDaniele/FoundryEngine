@@ -92,17 +92,6 @@ void MeshBuffer::Unbind()
     glBindVertexArray(0);
 }
 
-//void MeshBuffer::Draw() const
-//{
-//	glBindVertexArray(vao);
-//	glDrawElements(
-//		GL_TRIANGLES,
-//		indexCount,
-//		GL_UNSIGNED_INT,
-//		nullptr
-//	);
-//}
-
 uint32_t MeshBuffer::GetIndexCount() const
 {
     return indexCount;
