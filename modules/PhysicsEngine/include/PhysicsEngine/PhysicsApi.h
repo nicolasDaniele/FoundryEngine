@@ -1,41 +1,60 @@
 #pragma once
 
-#ifdef PHYSICSENGINE_EXPORTS
-	#define PHYSICS_API __declspec(dllexport)
-#else
-	#define PHYSICS_API __declspec(dllimport)
-#endif
-
-#include "Core/Vectors.h"
+#include <memory>
 #include "Core/Geometry3D.h"
-
-using Vec3 = CoreMath::Vec3;
-using Mat3 = CoreMath::Mat3;
-using OBB = CoreGeometry::OBB;
+#include "EngineInterfaces/IPhysics.h"
+#include "PhysicsEngine/Rigidbody.h"
 
 class PhysicsSystem;
 class RigidbodyVolume;
-class Rigidbody;
 
-extern "C"
+struct RigidbodySlot
 {
-	PHYSICS_API PhysicsSystem* GetPhysicsSystem();
-	PHYSICS_API void UpdatePhysicsSystem(PhysicsSystem* physicsSystem, float frameTime);
-	PHYSICS_API void DestroyPhysicsSystem(PhysicsSystem* physicsSystemToDestroy);
+	std::unique_ptr<Rigidbody> rigidbody;
+	uint32_t generation;
+	bool alive;
 
-	PHYSICS_API RigidbodyVolume* GetRigidbody(int bodyType, const Vec3& position,
+	RigidbodySlot() = default;
+
+	RigidbodySlot(std::unique_ptr<Rigidbody> rb, uint32_t gen, bool alive)
+        : rigidbody(std::move(rb)), generation(gen), alive(alive) {}
+
+	RigidbodySlot(const RigidbodySlot&) = delete;
+    RigidbodySlot& operator=(const RigidbodySlot&) = delete;
+
+    RigidbodySlot(RigidbodySlot&&) = default;
+    RigidbodySlot& operator=(RigidbodySlot&&) = default;
+};
+
+class PHYSICS_API Physics : public IPhysics
+{
+public:
+	Physics();
+	~Physics();
+
+	Physics(const Physics&) = delete;
+    Physics& operator=(const Physics&) = delete;
+
+    Physics(Physics&&) = default;
+    Physics& operator=(Physics&&) = default;
+
+	RigidbodyHandle CreateRigidbody(int bodyType, const Vec3& position,
 		float mass = 1.0f, float friction = 0.6f,
-		float coefitientOfRestitution = 0.5f);
-	PHYSICS_API void AddRigidbodyToPhysicsSystem(Rigidbody* rigidbody, PhysicsSystem* physicsSystem);
-	PHYSICS_API void AddConstraintToPhysicsSystem(const OBB& constraint, PhysicsSystem* physicsSystem);
-	
-	PHYSICS_API void SetRigidbodyBoxHalfExtents(RigidbodyVolume* rigidbody, const Vec3& halfExtents);
-	PHYSICS_API void SetRigidbodyBoxCenter(RigidbodyVolume* rigidbody, const Vec3& center);
-	PHYSICS_API void SetRigidbodyBoxOrientation(RigidbodyVolume* rigidbody, const Mat3& orientation);
-	PHYSICS_API void SetRigidbodySphereRadius(RigidbodyVolume* rigidbody, const float radius);
-	PHYSICS_API void SetRigidbodySphereCenter(RigidbodyVolume* rigidbody, const Vec3& center);
-	PHYSICS_API Vec3 GetRigidbodyPosition(RigidbodyVolume* rigidbody);
+		float coefitientOfRestitution = 0.5f) override;
 
-	PHYSICS_API void AddLinearImpulseToRigidbody(RigidbodyVolume* rigidbody, const Vec3& impulse);
-	PHYSICS_API void AddRotationalImpulseToRigidbody(RigidbodyVolume* rigidbody, const Vec3& point, const Vec3& impulse);
-}
+	void SetRigidbodyBoxHalfExtents(RigidbodyHandle rbHandle, const Vec3& halfExtents) override;
+	void SetRigidbodyBoxCenter(RigidbodyHandle rbHandle, const Vec3& center) override;
+	void SetRigidbodyBoxOrientation(RigidbodyHandle rbHandle, const Mat3& orientation) override;
+	void SetRigidbodySphereRadius(RigidbodyHandle rbHandle, const float radius) override;
+	void SetRigidbodySphereCenter(RigidbodyHandle rbHandle, const Vec3& center) override;
+	Vec3 GetRigidbodyPosition(RigidbodyHandle rbHandle) override;
+	
+	void AddLinearImpulseToRigidbody(RigidbodyHandle rbHandle, const Vec3& impulse) override;
+	void Update(float frameTime) override;
+	
+private:
+	bool IsValidRigidbody(RigidbodyHandle rbHandle);
+	RigidbodyVolume* GetVolume(RigidbodyHandle handle);
+	PhysicsSystem* physicsSystem = nullptr;
+	std::vector<RigidbodySlot> RBSlots;
+};

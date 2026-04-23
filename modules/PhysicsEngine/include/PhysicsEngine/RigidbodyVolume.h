@@ -21,6 +21,12 @@ public:
 
 	~RigidbodyVolume() { }
 
+	RigidbodyVolume(const RigidbodyVolume&) = delete;
+	RigidbodyVolume& operator=(const RigidbodyVolume&) = delete;
+
+	RigidbodyVolume(RigidbodyVolume&&) = default;
+	RigidbodyVolume& operator=(RigidbodyVolume&&) = default;
+
 	void IntegrateVelocity(float frameTime);
 	void IntegratePosition(float frameTime);
 	void AddForce(const Vec3& force);

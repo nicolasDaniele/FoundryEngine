@@ -1,6 +1,5 @@
 #pragma once
 
-#include <vector>
 #include "Core/Vectors.h"
 #include "Core/Geometry3D.h"
 
@@ -18,7 +17,14 @@ public:
 	int type;
 
 	inline Rigidbody() { type = RIGIDBODY_TYPE_BASE; }
-	virtual ~Rigidbody() { }
+	virtual ~Rigidbody() = default;
+	
+	Rigidbody(const Rigidbody&) = delete;
+	Rigidbody& operator=(const Rigidbody&) = delete;
+
+	Rigidbody(Rigidbody&&) = default;
+	Rigidbody& operator=(Rigidbody&&) = default;
+
 	inline bool HasVolume() 
 	{
 		return type == RIGIDBODY_TYPE_SPHERE

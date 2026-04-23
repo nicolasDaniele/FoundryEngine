@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core/Vectors.h"
-#include "GraphicsEngine/GraphicsTypes.h"
+#include "EngineInterfaces/GraphicsTypes.h"
 
 using Vec3 = CoreMath::Vec3;
 

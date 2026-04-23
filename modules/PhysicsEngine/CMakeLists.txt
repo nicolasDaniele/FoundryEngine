@@ -8,6 +8,10 @@ add_library(PhysicsEngine
 
 target_include_directories(PhysicsEngine PUBLIC include)
 
-target_link_libraries(PhysicsEngine PUBLIC Core)
+target_link_libraries(PhysicsEngine 
+    PUBLIC
+	Core
+	EngineInterfaces
+)
 
 target_compile_definitions(PhysicsEngine PRIVATE PHYSICSENGINE_EXPORTS)

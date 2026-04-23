@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vector>
-#include "GraphicsEngine/GraphicsTypes.h"
+#include <cstdint>
+#include "EngineInterfaces/GraphicsTypes.h"
 
 struct Mesh;
 

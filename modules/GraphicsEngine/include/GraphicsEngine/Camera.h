@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Core/Utils.h"
-#include "GraphicsEngine/GraphicsData.h"
 #include "Core/Vectors.h"
 #include "Core/Matrices.h"
+#include "EngineInterfaces/GraphicsPublicData.h"
 
 using Vec3 = CoreMath::Vec3;
 using Mat4 = CoreMath::Mat4;

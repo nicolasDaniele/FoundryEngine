@@ -1,11 +1,12 @@
 #include <glad/glad.h>
 #include <glfw/glfw3.h>
 #include <iostream>
-#include "GraphicsEngine/GraphicsApi.h"
-#include "Debugger/DebugRenderer.h"
-#include "PhysicsEngine/PhysicsApi.h"
 #include "Core/Geometry3D.h"
 #include "Core/Vectors.h"
+#include "Debugger/DebugRenderer.h"
+#include "EngineInterfaces/IGraphics.h"
+#include "EngineInterfaces/IPhysics.h"
+#include "EngineInterfaces/GraphicsPublicData.h"
 
 using Vec3 = CoreMath::Vec3;
 
@@ -29,14 +30,15 @@ float mouseYOffset = 0.0f;
 float frameTime = 0.0f;
 float lastFrame = 0.0f;
 
-RigidbodyVolume* ballVolume = nullptr;
-RigidbodyVolume* floorVolume = nullptr;
+RigidbodyHandle ballVolume;
+RigidbodyHandle floorVolume;
 CoreGeometry::Sphere ballDebug;
 CoreGeometry::OBB floorDebug;
 
 Vec3 ballPosition;
 
-Graphics* graphics = nullptr;
+IGraphics* graphics = nullptr;
+IPhysics* physics = nullptr;
 
 void HandleInput(GLFWwindow* window, float frameTime);
 void OrbitCamera_Callback(GLFWwindow* window, double xposIn, double yposIn);
@@ -61,12 +63,6 @@ int main()
 
 	glfwSetCursorPosCallback(window, OrbitCamera_Callback);
 	glfwMakeContextCurrent(window);
-
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-	{
-		std::cout << "[MainEngine] Failed to initialize GLAD";
-		return -1;
-	}
 
 	// ------------ Objects Variables ------------- \\
 
@@ -94,20 +90,19 @@ int main()
 		return -1;
 	}
 
-	MeshRenderer* ballRenderer = CreateMeshRenderer(graphics, MeshType::M_SPHERE, ShaderType::S_COLOR,
+	MeshRendererHandle ballRenderer = graphics->CreateMeshRenderer(MeshType::M_SPHERE, ShaderType::S_COLOR,
 		ballPosition,
 		ballSize,
 		Vec3(0.9f, 0.2f, 0.0f), // Color
 		FLAT_VS_PATH, FLAT_FS_PATH);
 
-	MeshRenderer* floorRenderer = CreateMeshRenderer(graphics, MeshType::M_CUBE, ShaderType::S_TEXTURE,
+	MeshRendererHandle floorRenderer = graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
 		floorPosition,
 		floorSize,
 		Vec3(0.2f, 0.8f, 0.2f), // Color
 		TEXTURED_VS_PATH, TEXTURED_FS_PATH);
 
-	//LoadTextureToMeshRenderer(WOOD_TEXTURE_PATH, ballRenderer);
-	int textureId = LoadTextureToMeshRenderer(WOOD_TEXTURE_PATH, floorRenderer);
+	int textureId = graphics->LoadTextureToMeshRenderer(WOOD_TEXTURE_PATH, floorRenderer);
 	if (textureId == -1)
 	{
 		std::cout << "Texture could not be loaded\n";
@@ -127,14 +122,14 @@ int main()
 	
 	floorDebug.center = floorPosition;
 	floorDebug.halfExtents = floorSize * 0.5f;
-	floorDebug.orientation = Mat3();
+	floorDebug.orientation = CoreMath::Mat3();
 
 	// ---------------------- END DEBUG SETUP ---------------------- \\
 
 
 	// ---------------------- PHYSICS SETUP ---------------------- \\
 	
-	PhysicsSystem* physics = GetPhysicsSystem();
+	physics = GetPhysicsEngine();
 	if (!physics)
 	{
 		std::cout << "Physics system is NULL\n";
@@ -144,16 +139,13 @@ int main()
 
 	float collisionRestitution = 0.7f;
 
-	ballVolume = GetRigidbody(2, ballPosition, 1.0f, 1.0f, collisionRestitution);
-	SetRigidbodySphereRadius(ballVolume, ballDebug.radius);
+	ballVolume = physics->CreateRigidbody(2, ballPosition, 1.0f, 1.0f, collisionRestitution);
+	physics->SetRigidbodySphereRadius(ballVolume, ballDebug.radius);
 
-	floorVolume = GetRigidbody(3, floorPosition, 0.0f, 1.0f, collisionRestitution);
-	SetRigidbodyBoxHalfExtents(floorVolume, floorDebug.halfExtents);
-	SetRigidbodyBoxCenter(floorVolume, floorDebug.center);
-	SetRigidbodyBoxOrientation(floorVolume, floorDebug.orientation);
-
-	AddRigidbodyToPhysicsSystem((Rigidbody*)ballVolume, physics);
-	AddRigidbodyToPhysicsSystem((Rigidbody*)floorVolume, physics);
+	floorVolume = physics->CreateRigidbody(3, floorPosition, 0.0f, 1.0f, collisionRestitution);
+	physics->SetRigidbodyBoxHalfExtents(floorVolume, floorDebug.halfExtents);
+	physics->SetRigidbodyBoxCenter(floorVolume, floorDebug.center);
+	physics->SetRigidbodyBoxOrientation(floorVolume, floorDebug.orientation);
 
 	// --------------------- END PHYSICS SETUP --------------------- \\
 
@@ -164,28 +156,27 @@ int main()
 		lastFrame = currentFrame;
 
 		// Physics update
-		UpdatePhysicsSystem(physics, frameTime);
+		physics->Update(frameTime);
 
 		// Graphics update
-		ballPosition = GetRigidbodyPosition(ballVolume);
-		UpdateMeshRendererPosition(ballRenderer, ballPosition);
+		ballPosition = physics->GetRigidbodyPosition(ballVolume);
+		graphics->UpdateMeshRendererPosition(ballRenderer, ballPosition);
 		
-		floorPosition = GetRigidbodyPosition(floorVolume);
-		UpdateMeshRendererPosition(floorRenderer, floorPosition);
+		floorPosition = physics->GetRigidbodyPosition(floorVolume);
+		graphics->UpdateMeshRendererPosition(floorRenderer, floorPosition);
 
-		CameraFollow(graphics, ballPosition, 10.0f, frameTime, 6.0f);
+		graphics->CameraFollow(ballPosition, 10.0f, frameTime, 6.0f);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 		HandleInput(window, frameTime);
 
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-			CameraOrbit(graphics, ballPosition, 10.0f, mouseXOffset, mouseYOffset, frameTime, 6.0f);
+			graphics->CameraOrbit(ballPosition, 10.0f, mouseXOffset, mouseYOffset, frameTime, 6.0f);
 
 		mouseXOffset = 0.0f;
 		mouseYOffset = 0.0f;
-
-		
+	
 		// Debug update
 		ballDebug.center = ballPosition;
 		floorDebug.center = floorPosition;
@@ -199,7 +190,7 @@ int main()
 	}
 
 	DestroyGraphicsEngine(graphics);
-	DestroyPhysicsSystem(physics);
+	DestroyPhysicsEngine(physics);
 	glfwTerminate();
 
 	return 0;
@@ -214,21 +205,21 @@ void HandleInput(GLFWwindow* window, float frameTime)
 	float verticalVel = 40.0f;
 
 	// Ball Movement
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS && ballVolume != nullptr)
-		AddLinearImpulseToRigidbody(ballVolume, Vec3(-speed, 0.0f, 0.0f) * frameTime);
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		physics->AddLinearImpulseToRigidbody(ballVolume, Vec3(-speed, 0.0f, 0.0f) * frameTime);
 
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS && ballVolume != nullptr)
-		AddLinearImpulseToRigidbody(ballVolume, Vec3(speed, 0.0f, 0.0f) * frameTime);
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		physics->AddLinearImpulseToRigidbody(ballVolume, Vec3(speed, 0.0f, 0.0f) * frameTime);
 
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && ballVolume != nullptr)
-		AddLinearImpulseToRigidbody(ballVolume, Vec3(0.0f, 0.0f, -speed) * frameTime);
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		physics->AddLinearImpulseToRigidbody(ballVolume, Vec3(0.0f, 0.0f, -speed) * frameTime);
 
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && ballVolume != nullptr)
-		AddLinearImpulseToRigidbody(ballVolume, Vec3(0.0f, 0.0f, speed) * frameTime);
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		physics->AddLinearImpulseToRigidbody(ballVolume, Vec3(0.0f, 0.0f, speed) * frameTime);
 
 
-	if (glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS && ballVolume != nullptr)
-		AddLinearImpulseToRigidbody(ballVolume, Vec3(0.0f, verticalVel, 0.0f) * frameTime);
+	if (glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
+		physics->AddLinearImpulseToRigidbody(ballVolume, Vec3(0.0f, verticalVel, 0.0f) * frameTime);
 }
 
 void OrbitCamera_Callback(GLFWwindow* window, double xPosIn, double yPosIn)
@@ -251,10 +242,4 @@ void OrbitCamera_Callback(GLFWwindow* window, double xPosIn, double yPosIn)
 
 	lastMouseXPos = xPos;
 	lastMouseYPos = yPos;
-
-	//if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-	//	CameraOrbit(graphics, ballPosition, 10.0f, mouseXOffset, mouseYOffset, frameTime, 10.f);
-
-	//mouseXOffset = 0.0f;
-	//mouseYOffset = 0.0f;
 }

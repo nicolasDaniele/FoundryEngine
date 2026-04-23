@@ -2,7 +2,8 @@
 #include <iostream>
 #include "GraphicsEngine/MeshRenderer.h"
 #include "GraphicsEngine/Mesh.h"
-#include "GraphicsEngine/MeshBuffer.h"
+
+MeshRenderer::~MeshRenderer() = default;
 
 void MeshRenderer::Draw(const Mat4& vp)
 {
@@ -18,11 +19,7 @@ void MeshRenderer::Draw(const Mat4& vp)
 	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, modelMat.asArray);
 
-	if (textureID == -1)
-	{
-		std::cout << "[MeshRenderer] No Texture Assigned" << std::endl;
-	}
-	else
+	if (textureID != -1)
 	{
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureID);
@@ -39,11 +36,6 @@ void MeshRenderer::Draw(const Mat4& vp)
 void MeshRenderer::SetShaderProgram(uint32_t _shader)
 {
 	shader = _shader;
-}
-
-void MeshRenderer::SetMeshBuffer(MeshBuffer* _meshBuffer)
-{
-	meshBuffer = _meshBuffer;
 }
 
 void MeshRenderer::SetTexture(uint32_t _textureID)
