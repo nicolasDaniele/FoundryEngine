@@ -8,6 +8,7 @@
 
 #include "Core/Vectors.h"
 #include "Core/Geometry3D.h"
+#include "Rigidbody.h"
 
 using Vec3 = CoreMath::Vec3;
 using Mat3 = CoreMath::Mat3;
@@ -27,7 +28,6 @@ extern "C"
 		float mass = 1.0f, float friction = 0.6f,
 		float coefitientOfRestitution = 0.5f);
 	PHYSICS_API void AddRigidbodyToPhysicsSystem(Rigidbody* rigidbody, PhysicsSystem* physicsSystem);
-	PHYSICS_API void AddConstraintToPhysicsSystem(const OBB& constraint, PhysicsSystem* physicsSystem);
 	
 	PHYSICS_API void SetRigidbodyBoxHalfExtents(RigidbodyVolume* rigidbody, const Vec3& halfExtents);
 	PHYSICS_API void SetRigidbodyBoxCenter(RigidbodyVolume* rigidbody, const Vec3& center);
@@ -36,6 +36,6 @@ extern "C"
 	PHYSICS_API void SetRigidbodySphereCenter(RigidbodyVolume* rigidbody, const Vec3& center);
 	PHYSICS_API Vec3 GetRigidbodyPosition(RigidbodyVolume* rigidbody);
 
+	PHYSICS_API void AddCollisionListenerToRigidbody(RigidbodyVolume* rigidbody, ICollisionListener* collisionListener);
 	PHYSICS_API void AddLinearImpulseToRigidbody(RigidbodyVolume* rigidbody, const Vec3& impulse);
-	PHYSICS_API void AddRotationalImpulseToRigidbody(RigidbodyVolume* rigidbody, const Vec3& point, const Vec3& impulse);
 }

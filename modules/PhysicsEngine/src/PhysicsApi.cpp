@@ -1,3 +1,4 @@
+#include <iostream>
 #include "PhysicsEngine/PhysicsApi.h"
 #include "PhysicsEngine/PhysicsSystem.h"
 #include "PhysicsEngine/RigidbodyVolume.h"
@@ -8,6 +9,8 @@ extern "C"
 	{
 		return new PhysicsSystem();
 	}
+
+	// TODO: Check for null in every function that takes in a pointer, and log an error if it's null
 
 	PHYSICS_API void UpdatePhysicsSystem(PhysicsSystem* physicsSystem, float frameTime)
 	{
@@ -29,11 +32,6 @@ extern "C"
 	PHYSICS_API void AddRigidbodyToPhysicsSystem(Rigidbody* rigidbody, PhysicsSystem* physicsSystem)
 	{
 		physicsSystem->AddRigidbody(rigidbody);
-	}
-
-	PHYSICS_API void AddConstraintToPhysicsSystem(const OBB& constraint, PhysicsSystem* physicsSystem)
-	{
-		physicsSystem->AddConstraint(constraint);
 	}
 
 	PHYSICS_API void SetRigidbodyBoxHalfExtents(RigidbodyVolume* rigidbody, const Vec3& halfExtents)
@@ -71,12 +69,13 @@ extern "C"
 		return rigidbody->GetPosition();
 	}
 
+	void AddCollisionListenerToRigidbody(RigidbodyVolume* rigidbody, ICollisionListener* collisionListener)
+	{
+		rigidbody->AddListener(collisionListener);
+	}
+
 	PHYSICS_API void AddLinearImpulseToRigidbody(RigidbodyVolume* rigidbody, const Vec3& impulse)
 	{
 		rigidbody->AddLinearImpulse(impulse);
-	}
-	PHYSICS_API void AddRotationalImpulseToRigidbody(RigidbodyVolume* rigidbody, const Vec3& point, const Vec3& impulse)
-	{
-		rigidbody->AddRotationalImpulse(point, impulse);
 	}
 }

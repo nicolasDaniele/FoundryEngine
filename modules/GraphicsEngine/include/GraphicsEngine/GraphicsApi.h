@@ -12,6 +12,7 @@
 #include "GraphicsEngine/GraphicsData.h"
 #include "Core/Utils.h"
 
+using Vec2 = CoreMath::Vec2;
 using Vec3 = CoreMath::Vec3;
 
 class MeshRenderer;
@@ -60,4 +61,5 @@ extern "C"
 	GRAPHICS_API void CameraFollow(Graphics* graphics, Vec3 target, float distance, float frameTime, float smoothSpeed);
 
 	GRAPHICS_API int LoadTextureToMeshRenderer(const char* textureFileName, MeshRenderer* meshRenderer);
+	GRAPHICS_API void SetTextureTilingToMeshRenderer(MeshRenderer* meshRenderer, Vec2 tiling);
 }

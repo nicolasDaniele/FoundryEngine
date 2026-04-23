@@ -9,6 +9,8 @@
 #define RIGIDBODY_TYPE_SPHERE		2
 #define RIGIDBODY_TYPE_BOX		3
 
+class ICollisionListener;
+
 using Vec3 = CoreMath::Vec3;
 using OBB = CoreGeometry::OBB;
 
@@ -16,6 +18,8 @@ class Rigidbody
 {
 public:
 	int type;
+	uint32_t id;
+	std::vector<ICollisionListener*> colliders;
 
 	inline Rigidbody() { type = RIGIDBODY_TYPE_BASE; }
 	virtual ~Rigidbody() { }
@@ -24,10 +28,21 @@ public:
 		return type == RIGIDBODY_TYPE_SPHERE
 			|| type == RIGIDBODY_TYPE_BOX;
 	}
+
 	virtual void Update(float frameTime) { }
 	virtual void IntegrateVelocity(float frameTime) { }
 	virtual void IntegratePosition(float frameTime) { }
 	virtual void ApplyGravityForce() { }
+
+	void AddListener(ICollisionListener* collider)
+	{
+		colliders.push_back(collider);
+	}
+
+	bool operator==(const Rigidbody& other) const
+	{
+		return id == other.id;
+	}
 
 	void SetPosition(const Vec3& newPosition) { position = newPosition; }
 	void SetVelocity(const Vec3& newVelocity) { velocity = newVelocity; }
@@ -37,6 +52,8 @@ public:
 	inline Vec3 GetAcceleration() const { return acceleration; }
 
 protected:
+	static uint32_t nextId;
+
 	Vec3 position;
 	Vec3 velocity;
 	Vec3 acceleration;

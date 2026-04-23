@@ -4,6 +4,7 @@
 #include "Core/Geometry3D.h"
 #include "Core/MathDefinitions.h"
 #include "Core/Matrices.h"
+#include "EngineInterfaces/PhysicsInterfaces.h"
 
 #include <iostream>
 
@@ -22,7 +23,6 @@ PhysicsSystem::PhysicsSystem()
 PhysicsSystem::~PhysicsSystem()
 {
 	ClearRigidbodies();
-	ClearConstraints();
 }
 
 void PhysicsSystem::Update(float frameTime)
@@ -30,6 +30,9 @@ void PhysicsSystem::Update(float frameTime)
 	colliders1.clear();
 	colliders2.clear();
 	collisions.clear();
+
+	previousCollisions = currentCollisions;
+	currentCollisions.clear();
 
 	for (int i = 0; i < bodies.size(); ++i)
 		bodies[i]->ApplyGravityForce();
@@ -57,6 +60,8 @@ void PhysicsSystem::Update(float frameTime)
 		RigidbodyVolume* rbv = (RigidbodyVolume*)bodies[i];
 		if(rbv) rbv->ClearForces();
 	}
+
+	GenerateCollisionEvents();
 }
 
 void PhysicsSystem::DetectCollisions()
@@ -97,6 +102,9 @@ void PhysicsSystem::DetectCollisions()
 				colliders1.push_back(bodies[i]);
 				colliders2.push_back(bodies[j]);
 				collisions.push_back(collision);
+
+				CollisionKey key(bodies[i]->id, bodies[j]->id);
+				currentCollisions[key] = collision;
 			}
 		}
 	}
@@ -155,24 +163,46 @@ void PhysicsSystem::CorrectPositions()
 	}
 }
 
+void PhysicsSystem::GenerateCollisionEvents()
+{
+	// ENTER + STAY
+	for (auto& [key, data] : currentCollisions)
+	{
+		bool existed = previousCollisions.find(key) != previousCollisions.end();
+
+		if (!existed)
+			NotifyCollisionEnter(key, data);
+		else
+			NotifyCollisionStay(key, data);
+	}
+
+	// EXIT
+	for (auto& [key, data] : previousCollisions)
+	{
+		if (currentCollisions.find(key) == currentCollisions.end())
+		{
+			NotifyCollisionExit(key);
+		}
+	}
+}
+
 void PhysicsSystem::AddRigidbody(Rigidbody* body)
 {
 	bodies.push_back(body);
+	bodyLookup[body->id] = body;
+}
+
+void PhysicsSystem::RemoveRigidbody(Rigidbody* body)
+{
+	bodies.erase(std::remove(bodies.begin(), bodies.end(), body), bodies.end());
+
+	bodyLookup.erase(body->id);
 }
 
 void PhysicsSystem::ClearRigidbodies()
 {
 	bodies.clear();
-}
-
-void PhysicsSystem::AddConstraint(const OBB& constraint)
-{
-	constraints.push_back(constraint);
-}
-
-void PhysicsSystem::ClearConstraints()
-{
-	constraints.clear();
+	bodyLookup.clear();
 }
 
 void PhysicsSystem::ApplyImpulses(RigidbodyVolume* body1, RigidbodyVolume* body2, const CollisionData& hitData, 
@@ -198,12 +228,6 @@ void PhysicsSystem::ApplyImpulses(RigidbodyVolume* body1, RigidbodyVolume* body2
 		return;
 
 	float minRestitution = fminf(body1->GetRestitution(), body2->GetRestitution());
-
-	// Baumgarte
-	//float beta = 0.2f;
-	//float baumgarte = (beta / frameTime) * fmaxf(0.0f, hitData.depth - penetrationSlack);
-
-	//float numerator = (-(1.0f + minRestitution) * Dot(relativeVel, hitNormal)) + baumgarte;
 	float numerator = (-(1.0f + minRestitution) * Dot(relativeVel, hitNormal));
 
 	float d1 = invMassSum;
@@ -273,4 +297,40 @@ void PhysicsSystem::ApplyImpulses(RigidbodyVolume* body1, RigidbodyVolume* body2
 		body2->SetVelocity(body2->GetVelocity() + tangentImpuse * invMass2);
 		body2->SetAngularVelocity(body2->GetAngularVelocity() + MultiplyMat3Vec3(invTensor2, Cross(dir2, tangentImpuse)));
 	}
+}
+
+void PhysicsSystem::NotifyCollisionEnter(const CollisionKey& key, const CollisionData& data)
+{
+	Rigidbody* A = bodyLookup[key.A];
+	Rigidbody* B = bodyLookup[key.B];
+
+	for (auto l : A->colliders)
+		l->OnCollisionEnter(A, B, data);
+
+	for (auto l : B->colliders)
+		l->OnCollisionEnter(B, A, data);
+}
+
+void PhysicsSystem::NotifyCollisionStay(const CollisionKey& key, const CollisionData& data)
+{
+	Rigidbody* A = bodyLookup[key.A];
+	Rigidbody* B = bodyLookup[key.B];
+
+	for (auto l : A->colliders)
+		l->OnCollisionStay(A, B, data);
+
+	for (auto l : B->colliders)
+		l->OnCollisionStay(B, A, data);
+}
+
+void PhysicsSystem::NotifyCollisionExit(const CollisionKey& key)
+{
+	Rigidbody* A = bodyLookup[key.A];
+	Rigidbody* B = bodyLookup[key.B];
+
+	for (auto l : A->colliders)
+		l->OnCollisionExit(A, B);
+
+	for (auto l : B->colliders)
+		l->OnCollisionExit(B, A);
 }

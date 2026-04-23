@@ -102,7 +102,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);PHYSICSENGINE_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)modules\Core\include;$(SolutionDir)modules\PhysicsEngine\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)modules\Core\include;$(SolutionDir)modules\PhysicsEngine\include;C:\Users\nicol\Projects\EngineSolution\modules\EngineInterfaces\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -120,7 +120,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);PHYSICSENGINE_EXPORTS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)modules\Core\include;$(SolutionDir)modules\PhysicsEngine\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)modules\Core\include;$(SolutionDir)modules\PhysicsEngine\include;C:\Users\nicol\Projects\EngineSolution\modules\EngineInterfaces\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -142,6 +142,7 @@
   <ItemGroup>
     <ClInclude Include="include\PhysicsEngine\Collisions3D.h" />
     <ClInclude Include="include\PhysicsEngine\PhysicsApi.h" />
+    <ClInclude Include="include\PhysicsEngine\PhysicsInterfaces.h" />
     <ClInclude Include="include\PhysicsEngine\PhysicsSystem.h" />
     <ClInclude Include="include\PhysicsEngine\Rigidbody.h" />
     <ClInclude Include="include\PhysicsEngine\RigidbodyVolume.h" />

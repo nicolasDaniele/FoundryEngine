@@ -4,25 +4,43 @@
 #include "GraphicsEngine/Mesh.h"
 #include "GraphicsEngine/MeshBuffer.h"
 
+MeshRenderer::MeshRenderer(MeshBuffer* _meshBuffer, const Vec3& _position, const Vec3& _scale)
+{
+	meshBuffer = _meshBuffer;
+	position = _position;
+	scale = _scale;
+}
+
+void MeshRenderer::InitUniforms()
+{
+	vpLoc = glGetUniformLocation(shader, "vp");
+	modelLoc = glGetUniformLocation(shader, "model");
+	texLoc = glGetUniformLocation(shader, "Texture");
+	tilingLoc = glGetUniformLocation(shader, "uTiling");
+}
+
 void MeshRenderer::Draw(const Mat4& vp)
 {
-	Mat4 translationMat = CoreMath::Translation(position);
-	Mat4 scaleMat = CoreMath::Scale(scale);
+	if (hasChanged)
+	{
+		Mat4 translationMat = CoreMath::Translation(position);
+		Mat4 scaleMat = CoreMath::Scale(scale);
+		modelMat = translationMat * scaleMat;
 
-	Mat4 modelMat = translationMat * scaleMat;
+		hasChanged = false;
+	}
 
 	glUseProgram(shader);
-	GLint vpLoc = glGetUniformLocation(shader, "vp");
 	glUniformMatrix4fv(vpLoc, 1, GL_FALSE, vp.asArray);
-	
-	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, modelMat.asArray);
 
 	if (textureID != -1)
 	{
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureID);
-		glUniform1i(glGetUniformLocation(shader, "Texture"), 0);
+
+		glUniform1i(texLoc, 0);
+		glUniform2f(tilingLoc, textureTiling.x, textureTiling.y);
 	}
 
 	meshBuffer->Bind();
@@ -47,6 +65,11 @@ void MeshRenderer::SetTexture(uint32_t _textureID)
 	textureID = _textureID;
 }
 
+//void MeshRenderer::SetTextureTiling(const Vec2& _tiling)
+//{
+//	textureTiling = _tiling;
+//}
+
 Vec3 MeshRenderer::GetPosition() const
 {
 	return position;
@@ -55,9 +78,11 @@ Vec3 MeshRenderer::GetPosition() const
 void MeshRenderer::SetPosition(const Vec3& _position)
 {
 	position = _position;
+	hasChanged = true;
 }
 
 void MeshRenderer::SetScale(const Vec3& _scale)
 {
 	scale = _scale;
+	hasChanged = true;
 }

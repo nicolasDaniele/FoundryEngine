@@ -14,7 +14,6 @@ public:
     void LoadMeshData(const Mesh& mesh, ShaderType shaderType);
     void Bind();
     void Unbind();
-    void Draw() const;
 
     uint32_t GetIndexCount() const;
 

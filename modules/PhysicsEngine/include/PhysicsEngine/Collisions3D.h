@@ -42,6 +42,43 @@ typedef struct CollisionData
 	std::vector<Vec3> contacts;
 } CollisionData;
 
+struct CollisionKey
+{
+    uint32_t A;
+    uint32_t B;
+
+    CollisionKey(uint32_t a, uint32_t b)
+    {
+        if (a < b)
+        {
+            A = a;
+            B = b;
+        }
+        else
+        {
+            A = b;
+            B = a;
+        }
+    }
+
+    bool operator==(const CollisionKey& other) const
+    {
+        return A == other.A && B == other.B;
+    }
+};
+
+struct CollisionKeyHash
+{
+    size_t operator()(const CollisionKey& key) const
+    {
+        size_t h1 = std::hash<uint32_t>()(key.A);
+        size_t h2 = std::hash<uint32_t>()(key.B);
+
+        return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
+    }
+};
+
+
 bool SphereShpere(const Sphere& sphere1, const Sphere& sphere2);
 bool SphereAABB(const Sphere& sphere, const AABB& aabb);
 bool SphereOBB(const Sphere& sphere, const OBB& obb);

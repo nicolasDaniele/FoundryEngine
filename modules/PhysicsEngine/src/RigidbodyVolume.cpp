@@ -5,8 +5,12 @@
 #include "Core/Vectors.h"
 #include "Core/MathDefinitions.h"
 
+uint32_t Rigidbody::nextId = 1;
+
 RigidbodyVolume::RigidbodyVolume(int _bodyType, const Vec3& _position, float _mass, float _friction, float _restitution)
 {
+	id = nextId++;
+
 	type = _bodyType;
 	position = _position;
 	mass = _mass;
@@ -44,8 +48,6 @@ void RigidbodyVolume::ApplyGravityForce()
 void RigidbodyVolume::ClearForces()
 {
 	forcesSum = Vec3(0.0f, 0.0f, 0.0f);
-	/*pseudoVelocity = Vec3(0.0f, 0.0f, 0.0f);
-	pseudoAngularVelocity = Vec3(0.0f, 0.0f, 0.0f);*/
 }
 
 void RigidbodyVolume::SynchCollisionVolumes()

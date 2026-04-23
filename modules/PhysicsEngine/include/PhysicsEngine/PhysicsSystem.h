@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <unordered_map>
 #include "PhysicsEngine/Collisions3D.h"
 
 using OBB = CoreGeometry::OBB;
@@ -17,10 +18,10 @@ public:
 	void DetectCollisions();
 	void SolveImpulses(float frameTime);
 	void CorrectPositions();
+	void GenerateCollisionEvents();
 	void AddRigidbody(Rigidbody* body);
+	void RemoveRigidbody(Rigidbody* body);
 	void ClearRigidbodies();
-	void AddConstraint(const OBB& constraint);
-	void ClearConstraints();
 
 private:
 	std::vector<Rigidbody*> bodies;
@@ -29,10 +30,18 @@ private:
 	std::vector<Rigidbody*> colliders2;
 	std::vector<CollisionData> collisions;
 
+	std::unordered_map<CollisionKey, CollisionData, CollisionKeyHash> currentCollisions;
+	std::unordered_map<CollisionKey, CollisionData, CollisionKeyHash> previousCollisions;
+	std::unordered_map<uint32_t, Rigidbody*> bodyLookup;
+
 	float linearProjectionPercent;
 	float penetrationSlack;
 	int impulseIteration;
 
 	void ApplyImpulses(RigidbodyVolume* body1, RigidbodyVolume* body2,
 		const CollisionData& hitData, int contanctIndex, float frameTime);
+
+	void NotifyCollisionEnter(const CollisionKey& key, const CollisionData& data);
+	void NotifyCollisionStay(const CollisionKey& key, const CollisionData& data);
+	void NotifyCollisionExit(const CollisionKey& key);
 }; 

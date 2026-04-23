@@ -160,6 +160,7 @@ extern "C"
 
 		uint32_t shaderProgram = graphics->CreateShaderProgram(vertexShaderPath, fragmentShaderPath);
 		newMeshRenderer->SetShaderProgram(shaderProgram);
+		newMeshRenderer->InitUniforms();
 		graphics->AddMeshRenderer(newMeshRenderer);
 
 		return newMeshRenderer;
@@ -192,6 +193,12 @@ extern "C"
 
 	GRAPHICS_API int LoadTextureToMeshRenderer(const char* textureFileName, MeshRenderer* meshRenderer)
 	{
+		if(meshRenderer == nullptr)
+		{
+			std::cout << "[GraphicsApi] MeshRenderer is null. Cannot load texture." << std::endl;
+			return -1;
+		}
+
 		TextureLoader textureLoader;
 		 int textureID = textureLoader.LoadTexture(textureFileName);
 		 if (textureID == -1)
@@ -203,5 +210,15 @@ extern "C"
 		 meshRenderer->SetTexture(textureID);
 		 
 		 return textureID;
+	}
+	void SetTextureTilingToMeshRenderer(MeshRenderer* meshRenderer, Vec2 tiling)
+	{
+		if(meshRenderer == nullptr)
+		 {
+			 std::cout << "[GraphicsApi] MeshRenderer is null. Cannot set texture tiling." << std::endl;
+			 return;
+		}
+
+		meshRenderer->SetTextureTiling(tiling);
 	}
 }

@@ -47,5 +47,8 @@
     <ClInclude Include="include\PhysicsEngine\RigidbodyVolume.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\PhysicsEngine\PhysicsInterfaces.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

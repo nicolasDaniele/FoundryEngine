@@ -1,12 +1,16 @@
 #include <glad/glad.h>
 #include <glfw/glfw3.h>
 #include <iostream>
+#include "Core/Geometry3D.h"
+#include "Core/Vectors.h"
 #include "GraphicsEngine/GraphicsApi.h"
 #include "Debugger/DebugRenderer.h"
 #include "PhysicsEngine/PhysicsApi.h"
-#include "Core/Geometry3D.h"
-#include "Core/Vectors.h"
+#include "EngineInterfaces/PhysicsInterfaces.h"
+#include "PhysicsEngine/Rigidbody.h"
+#include "GameplayObjects/PlayerObject.h"
 
+using Vec2 = CoreMath::Vec2;
 using Vec3 = CoreMath::Vec3;
 
 const int WIDTH = 960;
@@ -18,7 +22,6 @@ const char* TEXTURED_VS_PATH = "Assets/Shaders/TexturedModel.vs";
 const char* TEXTURED_FS_PATH = "Assets/Shaders/TexturedModel.fs";
 
 const char* WOOD_TEXTURE_PATH = "Assets/Textures/wood.jpg";
-const char* ARCADE_TEXTURE_PATH = "Assets/Textures/arcade.png";
 
 float lastMouseXPos = WIDTH / 2.0f;
 float lastMouseYPos = HEIGHT / 2.0f;
@@ -38,6 +41,10 @@ Vec3 ballPosition;
 
 Graphics* graphics = nullptr;
 
+float playerSpeed = 10.0f;
+float playerJumpImpulse = 1500.0f;
+PlayerObject* player = nullptr;
+
 void HandleInput(GLFWwindow* window, float frameTime);
 void OrbitCamera_Callback(GLFWwindow* window, double xposIn, double yposIn);
 
@@ -45,6 +52,7 @@ static void glfwError(int id, const char* description)
 {
 	std::cout << description << std::endl;
 }
+
 
 int main()
 {
@@ -97,7 +105,7 @@ int main()
 	MeshRenderer* ballRenderer = CreateMeshRenderer(graphics, MeshType::M_SPHERE, ShaderType::S_COLOR,
 		ballPosition,
 		ballSize,
-		Vec3(0.9f, 0.2f, 0.0f), // Color
+		Vec3(0.4f, 0.4f, 0.4f), // Color
 		FLAT_VS_PATH, FLAT_FS_PATH);
 
 	MeshRenderer* floorRenderer = CreateMeshRenderer(graphics, MeshType::M_CUBE, ShaderType::S_TEXTURE,
@@ -106,14 +114,16 @@ int main()
 		Vec3(0.2f, 0.8f, 0.2f), // Color
 		TEXTURED_VS_PATH, TEXTURED_FS_PATH);
 
-	//LoadTextureToMeshRenderer(WOOD_TEXTURE_PATH, ballRenderer);
-	int textureId = LoadTextureToMeshRenderer(WOOD_TEXTURE_PATH, floorRenderer);
-	if (textureId == -1)
+	int woodTtextureId = LoadTextureToMeshRenderer(WOOD_TEXTURE_PATH, floorRenderer);
+	if (woodTtextureId == -1)
 	{
-		std::cout << "Texture could not be loaded\n";
+		std::cout << "Texture could not be loaded for floorRenderer\n";
 		std::cin.get();
 		return -1;
 	}
+
+	SetTextureTilingToMeshRenderer(floorRenderer, Vec2(1.0f, 50.0f));
+
 
 	// ------------------- END GRAHICS SETUP ------------------- \\
 
@@ -123,7 +133,7 @@ int main()
 	Debugger::DebugRenderer* debugRenderer = new Debugger::DebugRenderer(graphics);
 
 	ballDebug.center = ballPosition;
-	ballDebug.radius = ballSize.y;// *0.5f;
+	ballDebug.radius = ballSize.y;
 	
 	floorDebug.center = floorPosition;
 	floorDebug.halfExtents = floorSize * 0.5f;
@@ -144,10 +154,10 @@ int main()
 
 	float collisionRestitution = 0.7f;
 
-	ballVolume = GetRigidbody(2, ballPosition, 1.0f, 1.0f, collisionRestitution);
+	ballVolume = GetRigidbody(2, ballPosition, 1.0f, 1.0f, 0.0f);
 	SetRigidbodySphereRadius(ballVolume, ballDebug.radius);
 
-	floorVolume = GetRigidbody(3, floorPosition, 0.0f, 1.0f, collisionRestitution);
+	floorVolume = GetRigidbody(3, floorPosition, 0.0f, 1.0f, 0.0f);
 	SetRigidbodyBoxHalfExtents(floorVolume, floorDebug.halfExtents);
 	SetRigidbodyBoxCenter(floorVolume, floorDebug.center);
 	SetRigidbodyBoxOrientation(floorVolume, floorDebug.orientation);
@@ -157,6 +167,9 @@ int main()
 
 	// --------------------- END PHYSICS SETUP --------------------- \\
 
+
+	player = new PlayerObject((RigidbodyVolume*)ballVolume, ballRenderer, playerSpeed, playerJumpImpulse);
+
 	while (!glfwWindowShouldClose(window))
 	{
 		float currentFrame = static_cast<float>(glfwGetTime());
@@ -165,26 +178,22 @@ int main()
 
 		// Physics update
 		UpdatePhysicsSystem(physics, frameTime);
-
-		// Graphics update
-		ballPosition = GetRigidbodyPosition(ballVolume);
-		UpdateMeshRendererPosition(ballRenderer, ballPosition);
 		
 		floorPosition = GetRigidbodyPosition(floorVolume);
 		UpdateMeshRendererPosition(floorRenderer, floorPosition);
 
-		CameraFollow(graphics, ballPosition, 10.0f, frameTime, 6.0f);
+		if (player != nullptr)
+			CameraFollow(graphics, player->GetPosition(), 10.0f, frameTime, 6.0f);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 		HandleInput(window, frameTime);
 
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-			CameraOrbit(graphics, ballPosition, 10.0f, mouseXOffset, mouseYOffset, frameTime, 6.0f);
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && player != nullptr)
+			CameraOrbit(graphics, player->GetPosition(), 10.0f, mouseXOffset, mouseYOffset, frameTime, 6.0f);
 
 		mouseXOffset = 0.0f;
 		mouseYOffset = 0.0f;
-
 		
 		// Debug update
 		ballDebug.center = ballPosition;
@@ -195,8 +204,12 @@ int main()
 		debugRenderer->AddBox(floorDebug);
 		debugRenderer->DrawDebug(Vec3(1.0f, 0.0f, 0.0f));
 
+		player->Update(frameTime);
+
 		graphics->Render();
 	}
+
+	delete player;
 
 	DestroyGraphicsEngine(graphics);
 	DestroyPhysicsSystem(physics);
@@ -210,25 +223,22 @@ void HandleInput(GLFWwindow* window, float frameTime)
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 
-	float speed = 10.0f;
-	float verticalVel = 40.0f;
+	// Player Movement
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS && player != nullptr)
+		player->Move(Vec3(-playerSpeed, 0.0f, 0.0f) * frameTime);
 
-	// Ball Movement
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS && ballVolume != nullptr)
-		AddLinearImpulseToRigidbody(ballVolume, Vec3(-speed, 0.0f, 0.0f) * frameTime);
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS && player != nullptr)
+		player->Move(Vec3(playerSpeed, 0.0f, 0.0f) * frameTime);
 
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS && ballVolume != nullptr)
-		AddLinearImpulseToRigidbody(ballVolume, Vec3(speed, 0.0f, 0.0f) * frameTime);
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && player != nullptr)
+		player->Move(Vec3(0.0f, 0.0f, -playerSpeed) * frameTime);
 
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && ballVolume != nullptr)
-		AddLinearImpulseToRigidbody(ballVolume, Vec3(0.0f, 0.0f, -speed) * frameTime);
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && player != nullptr)
+		player->Move(Vec3(0.0f, 0.0f, playerSpeed) * frameTime);
 
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS && ballVolume != nullptr)
-		AddLinearImpulseToRigidbody(ballVolume, Vec3(0.0f, 0.0f, speed) * frameTime);
-
-
-	if (glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS && ballVolume != nullptr)
-		AddLinearImpulseToRigidbody(ballVolume, Vec3(0.0f, verticalVel, 0.0f) * frameTime);
+	// Player Jump
+	if (glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS && player != nullptr)
+		player->Jump(playerJumpImpulse * frameTime);
 }
 
 void OrbitCamera_Callback(GLFWwindow* window, double xPosIn, double yPosIn)
@@ -251,10 +261,4 @@ void OrbitCamera_Callback(GLFWwindow* window, double xPosIn, double yPosIn)
 
 	lastMouseXPos = xPos;
 	lastMouseYPos = yPos;
-
-	//if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-	//	CameraOrbit(graphics, ballPosition, 10.0f, mouseXOffset, mouseYOffset, frameTime, 10.f);
-
-	//mouseXOffset = 0.0f;
-	//mouseYOffset = 0.0f;
 }
