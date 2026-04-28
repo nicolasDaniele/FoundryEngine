@@ -2,8 +2,8 @@
 
 #include <memory>
 #include "Core/Geometry3D.h"
-#include "EngineInterfaces/IPhysics.h"
 #include "PhysicsEngine/Rigidbody.h"
+#include "EngineInterfaces/IPhysics.h"
 
 class PhysicsSystem;
 class RigidbodyVolume;
@@ -41,6 +41,7 @@ public:
 	RigidbodyHandle CreateRigidbody(int bodyType, const Vec3& position,
 		float mass = 1.0f, float friction = 0.6f,
 		float coefitientOfRestitution = 0.5f) override;
+	void DestroyRigidbody(RigidbodyHandle rbHandle);
 
 	void SetRigidbodyBoxHalfExtents(RigidbodyHandle rbHandle, const Vec3& halfExtents) override;
 	void SetRigidbodyBoxCenter(RigidbodyHandle rbHandle, const Vec3& center) override;
@@ -48,13 +49,17 @@ public:
 	void SetRigidbodySphereRadius(RigidbodyHandle rbHandle, const float radius) override;
 	void SetRigidbodySphereCenter(RigidbodyHandle rbHandle, const Vec3& center) override;
 	Vec3 GetRigidbodyPosition(RigidbodyHandle rbHandle) override;
-	
+
+	void AddCollisionListenerToRigidbody(RigidbodyHandle rbHandle, ICollisionListener* listener) override;
 	void AddLinearImpulseToRigidbody(RigidbodyHandle rbHandle, const Vec3& impulse) override;
+	
 	void Update(float frameTime) override;
 	
+	Rigidbody* GetRigidbodyFromHandle(RigidbodyHandle rbHandle);
+	
 private:
-	bool IsValidRigidbody(RigidbodyHandle rbHandle);
-	RigidbodyVolume* GetVolume(RigidbodyHandle handle);
+	bool IsValidRigidbodyHandle(RigidbodyHandle rbHandle);
+	RigidbodyVolume* GetVolume(RigidbodyHandle rbHandle);
 	PhysicsSystem* physicsSystem = nullptr;
 	std::vector<RigidbodySlot> RBSlots;
 };

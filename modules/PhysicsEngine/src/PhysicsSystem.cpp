@@ -1,6 +1,6 @@
 #include "PhysicsEngine/PhysicsSystem.h"
-#include "PhysicsEngine/Rigidbody.h"
 #include "PhysicsEngine/RigidbodyVolume.h"
+#include "PhysicsEngine/PhysicsApi.h"
 #include "Core/Geometry3D.h"
 #include "Core/MathDefinitions.h"
 #include "Core/Matrices.h"
@@ -8,8 +8,10 @@
 
 #include <iostream>
 
-PhysicsSystem::PhysicsSystem()
+PhysicsSystem::PhysicsSystem(Physics* _physics)
 {
+	physics = _physics;
+	
 	// @TODO: Pass in this values as parameters
 	linearProjectionPercent = 0.4f;
 	penetrationSlack = 0.01f;
@@ -103,7 +105,7 @@ void PhysicsSystem::DetectCollisions()
 				colliders2.push_back(bodies[j]);
 				collisions.push_back(collision);
 
-				CollisionKey key(bodies[i]->id, bodies[j]->id);
+				CollisionKey key(bodies[i]->GetHandle(), bodies[j]->GetHandle());
 				currentCollisions[key] = collision;
 			}
 		}
@@ -165,7 +167,6 @@ void PhysicsSystem::CorrectPositions()
 
 void PhysicsSystem::GenerateCollisionEvents()
 {
-	// ENTER + STAY
 	for (auto& [key, data] : currentCollisions)
 	{
 		bool existed = previousCollisions.find(key) != previousCollisions.end();
@@ -176,7 +177,6 @@ void PhysicsSystem::GenerateCollisionEvents()
 			NotifyCollisionStay(key, data);
 	}
 
-	// EXIT
 	for (auto& [key, data] : previousCollisions)
 	{
 		if (currentCollisions.find(key) == currentCollisions.end())
@@ -189,20 +189,16 @@ void PhysicsSystem::GenerateCollisionEvents()
 void PhysicsSystem::AddRigidbody(Rigidbody* body)
 {
 	bodies.push_back(body);
-	bodyLookup[body->id] = body;
 }
 
 void PhysicsSystem::RemoveRigidbody(Rigidbody* body)
 {
 	bodies.erase(std::remove(bodies.begin(), bodies.end(), body), bodies.end());
-
-	bodyLookup.erase(body->id);
 }
 
 void PhysicsSystem::ClearRigidbodies()
 {
 	bodies.clear();
-	bodyLookup.clear();
 }
 
 void PhysicsSystem::ApplyImpulses(RigidbodyVolume* body1, RigidbodyVolume* body2, const CollisionData& hitData, 
@@ -301,36 +297,63 @@ void PhysicsSystem::ApplyImpulses(RigidbodyVolume* body1, RigidbodyVolume* body2
 
 void PhysicsSystem::NotifyCollisionEnter(const CollisionKey& key, const CollisionData& data)
 {
-	Rigidbody* A = bodyLookup[key.A];
-	Rigidbody* B = bodyLookup[key.B];
+	if(!physics) 
+	{
+		std::cout << "PhysicsSytem: physics is null." << std::endl;
+		return;
+	}
 
-	for (auto l : A->colliders)
-		l->OnCollisionEnter(A, B, data);
+	Rigidbody* A = physics->GetRigidbodyFromHandle(key.A);
+	Rigidbody* B = physics->GetRigidbodyFromHandle(key.B);
 
-	for (auto l : B->colliders)
-		l->OnCollisionEnter(B, A, data);
+	if (!A || !B)
+	{
+		std::cout << "PhysicsSytem: invalid Rigidbody." << std::endl;
+		return;
+	}
+
+	A->NotifyCollisionEnter(key.A, key.B, data);
+	B->NotifyCollisionEnter(key.B, key.A, data);
 }
 
 void PhysicsSystem::NotifyCollisionStay(const CollisionKey& key, const CollisionData& data)
 {
-	Rigidbody* A = bodyLookup[key.A];
-	Rigidbody* B = bodyLookup[key.B];
+	if(!physics) 
+	{
+		std::cout << "PhysicsSytem: physics is null." << std::endl;
+		return;
+	}
 
-	for (auto l : A->colliders)
-		l->OnCollisionStay(A, B, data);
+	Rigidbody* A = physics->GetRigidbodyFromHandle(key.A);
+	Rigidbody* B = physics->GetRigidbodyFromHandle(key.B);
 
-	for (auto l : B->colliders)
-		l->OnCollisionStay(B, A, data);
+	if (!A || !B)
+	{
+		std::cout << "PhysicsSytem: invalid Rigidbody." << std::endl;
+		return;
+	}
+
+	A->NotifyCollisionStay(key.A, key.B, data);
+	B->NotifyCollisionStay(key.B, key.A, data);
 }
 
 void PhysicsSystem::NotifyCollisionExit(const CollisionKey& key)
 {
-	Rigidbody* A = bodyLookup[key.A];
-	Rigidbody* B = bodyLookup[key.B];
+	if(!physics) 
+	{
+		std::cout << "PhysicsSytem: physics is null." << std::endl;
+		return;
+	}
 
-	for (auto l : A->colliders)
-		l->OnCollisionExit(A, B);
+	Rigidbody* A = physics->GetRigidbodyFromHandle(key.A);
+	Rigidbody* B = physics->GetRigidbodyFromHandle(key.B);
 
-	for (auto l : B->colliders)
-		l->OnCollisionExit(B, A);
+	if (!A || !B)
+	{
+		std::cout << "PhysicsSytem: invalid Rigidbody." << std::endl;
+		return;
+	}
+
+	A->NotifyCollisionExit(key.A, key.B);
+	B->NotifyCollisionExit(key.B, key.A);
 }

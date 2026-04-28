@@ -17,6 +17,8 @@ struct RigidbodyHandle
 using Vec3 = CoreMath::Vec3;
 using Mat3 = CoreMath::Mat3;
 
+class ICollisionListener;
+
 class IPhysics
 {
 public:
@@ -33,7 +35,9 @@ public:
 	virtual void SetRigidbodySphereCenter(RigidbodyHandle rbHandle, const Vec3& center) = 0;
 	virtual Vec3 GetRigidbodyPosition(RigidbodyHandle rbHandle) = 0;
 	
+	virtual void AddCollisionListenerToRigidbody(RigidbodyHandle rbHandle, ICollisionListener* listener) = 0;	
 	virtual void AddLinearImpulseToRigidbody(RigidbodyHandle rbHandle, const Vec3& impulse) = 0;
+	
 	virtual void Update(float frameTime) = 0;
 };
 

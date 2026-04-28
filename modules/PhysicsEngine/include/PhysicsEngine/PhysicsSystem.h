@@ -6,13 +6,14 @@
 
 using OBB = CoreGeometry::OBB;
 
+class Physics;
 class Rigidbody;
 class RigidbodyVolume;
 
 class PhysicsSystem
 {
 public:
-	PhysicsSystem();
+	PhysicsSystem(Physics* _physics);
 	~PhysicsSystem();
 	void Update(float frameTime);
 	void DetectCollisions();
@@ -24,15 +25,14 @@ public:
 	void ClearRigidbodies();
 
 private:
+	Physics* physics = nullptr;
 	std::vector<Rigidbody*> bodies;
-	std::vector<OBB> constraints;
 	std::vector<Rigidbody*> colliders1;
 	std::vector<Rigidbody*> colliders2;
 	std::vector<CollisionData> collisions;
 
 	std::unordered_map<CollisionKey, CollisionData, CollisionKeyHash> currentCollisions;
 	std::unordered_map<CollisionKey, CollisionData, CollisionKeyHash> previousCollisions;
-	std::unordered_map<uint32_t, Rigidbody*> bodyLookup;
 
 	float linearProjectionPercent;
 	float penetrationSlack;

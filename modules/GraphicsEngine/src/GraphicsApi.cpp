@@ -14,14 +14,13 @@ Graphics::Graphics(CameraParams cameraParams, GLADloadproc loadProc)
 {
 	if (!gladLoadGLLoader(loadProc))
 	{
-		std::cout << "[GraphicsEngine] Failed to initialize GLAD\n";
+		std::cout << "[GraphicsEngine] Failed to initialize GLAD." << std::endl;
 		return;
 	}
 
 	if (!glad_glClear)
 	{
-		std::cout << "[GraphicsEngine] GLAD not loaded!\n"
-				  << std::endl;
+		std::cout << "[GraphicsEngine] GLAD not loaded." << std::endl;
 		return;
 	}
 
@@ -63,7 +62,6 @@ Graphics::~Graphics()
 		glDeleteVertexArrays(1, &debugVAO);
 }
 
-// @TODO: Print error message if MeshRenderer is not valid (in every function)
 uint32_t Graphics::CreateShaderProgram(const char *vertexShaderPath, const char *fragmentShaderPath)
 {
 	ShaderLoader shaderLoader;
@@ -104,7 +102,6 @@ void Graphics::DrawDebugLines(const Vec3 *vertices, int vertexCount,
 	glBindVertexArray(0);
 }
 
-// @TODO: Receive int instead of MeshType and ShaderType, and break if the received value is invalid
 MeshRendererHandle Graphics::CreateMeshRenderer(MeshType meshType, ShaderType shaderType, Vec3 position, Vec3 scale, Vec3 color,
 											  const char *vertexShaderPath, const char *fragmentShaderPath)
 {
@@ -113,6 +110,7 @@ MeshRendererHandle Graphics::CreateMeshRenderer(MeshType meshType, ShaderType sh
 	meshBuffer->LoadMeshData(mesh, shaderType);
 
 	uint32_t shaderProgram = CreateShaderProgram(vertexShaderPath, fragmentShaderPath);
+		
 	for (uint32_t i = 0; i < MRSlots.size(); i++)
 	{
 		if (!MRSlots[i].alive)
@@ -120,83 +118,142 @@ MeshRendererHandle Graphics::CreateMeshRenderer(MeshType meshType, ShaderType sh
 			MRSlots[i].alive = true;
 			MRSlots[i].generation++;
 
-			MRSlots[i].renderer = MeshRenderer(std::move(meshBuffer), position, scale);
-			MRSlots[i].renderer.SetShaderProgram(shaderProgram);
+			MRSlots[i].renderer = std::move(std::make_unique<MeshRenderer>(std::move(meshBuffer), position, scale));
+			MRSlots[i].renderer->SetShaderProgram(shaderProgram);
+			MRSlots[i].renderer->InitUniforms();
 
 			return { i, MRSlots[i].generation };
 		}
 	}
 
 	MRSlots.emplace_back(
-		MeshRenderer(std::move(meshBuffer), position, scale),
+		std::make_unique<MeshRenderer>(std::move(meshBuffer), position, scale),
 		0,
 		true
 	);
 
 	uint32_t index = (uint32_t)(MRSlots.size() - 1);
-	MRSlots[index].renderer.SetShaderProgram(shaderProgram);
+	MRSlots[index].renderer->SetShaderProgram(shaderProgram);
+	MRSlots[index].renderer->InitUniforms();
 
 	return { index, 0 };
 }
 
-bool Graphics::IsValidMeshRenderer(MeshRendererHandle mHandle)
+void Graphics::DestroyMeshRenderer(MeshRendererHandle meshHandle)
 {
-    return mHandle.index < MRSlots.size() &&
-           MRSlots[mHandle.index].alive &&
-           MRSlots[mHandle.index].generation == mHandle.generation;
+    if (!IsValidMeshRenderer(meshHandle))
+	{
+		std::cout << "[GraphicsEngine] Invalid MeshRendererHandle." << std::endl;
+		return;
+	}
+
+    auto& slot = MRSlots[meshHandle.index];
+    slot.renderer.reset();
+    slot.alive = false;
+    slot.generation++;
+}
+
+bool Graphics::IsValidMeshRenderer(MeshRendererHandle meshHandle)
+{
+    return meshHandle.index < MRSlots.size() &&
+           MRSlots[meshHandle.index].alive &&
+           MRSlots[meshHandle.index].generation == meshHandle.generation;
 }
 
 void Graphics::UpdateMeshRendererPosition(MeshRendererHandle meshHandle, Vec3 newPosition)
 {
-	if (!IsValidMeshRenderer(meshHandle)) return;
+	if (!IsValidMeshRenderer(meshHandle))
+	{
+		std::cout << "[GraphicsEngine] Invalid MeshRendererHandle." << std::endl;
+		return;
+	}
 
-    MRSlots[meshHandle.index].renderer.SetPosition(newPosition);
+    MRSlots[meshHandle.index].renderer->SetPosition(newPosition);
 }
 
 int Graphics::LoadTextureToMeshRenderer(const char *textureFileName, MeshRendererHandle meshHandle)
 {
-	if (!IsValidMeshRenderer(meshHandle)) return -1;
+	if (!IsValidMeshRenderer(meshHandle))
+	{
+		std::cout << "[GraphicsEngine] Invalid MeshRendererHandle." << std::endl;
+		return -1;
+	}
 	
 	TextureLoader textureLoader;
 	int textureID = textureLoader.LoadTexture(textureFileName);
 	if (textureID == -1)
 	{
-		std::cout << "[GraphicsApi] Failed to load texture: " << textureFileName << std::endl;
+		std::cout << "[GraphicsEngine] Failed to load texture: " << textureFileName << std::endl;
 		return -1;
 	}
 
-	MRSlots[meshHandle.index].renderer.SetTexture(textureID);
+	MRSlots[meshHandle.index].renderer->SetTexture(textureID);
 
 	return textureID;
 }
 
+void Graphics::SetTextureTilingToMeshRenderer(MeshRendererHandle meshHandle, Vec2 tiling)
+{
+	if (!IsValidMeshRenderer(meshHandle))
+	{
+		std::cout << "[GraphicsEngine] Invalid MeshRendererHandle." << std::endl;
+		return;
+	}
+
+	MRSlots[meshHandle.index].renderer->SetTextureTiling(tiling);
+}
+
 void Graphics::RotateCamera(float xOffset, float yOffset)
 {
-	if (camera == nullptr) return;
+	if (camera == nullptr)
+	{
+		std::cout << "[GraphicsEngine] Camera is null." << std::endl;
+		return;
+	}
+
 	camera->Rotate(xOffset, yOffset);
 }
 
 void Graphics::CameraOrbit(Vec3 target, float distance, float xOffset, float yOffset, float frameTime, float smoothSpeed)
 {
-	if (camera == nullptr) return;
+	if (camera == nullptr)
+	{
+		std::cout << "[GraphicsEngine] Camera is null." << std::endl;
+		return;
+	}
+
 	camera->Orbit(target, distance, xOffset, yOffset, frameTime, smoothSpeed);
 }
 
 void Graphics::MoveCamera(Utils::Direction direction, float frameTime)
 {
-	if (camera == nullptr) return;
+	if (camera == nullptr)
+	{
+		std::cout << "[GraphicsEngine] Camera is null." << std::endl;
+		return;
+	}
+
 	camera->Move(direction, frameTime);
 }
 
 void Graphics::CameraFollow(Vec3 target, float distance, float frameTime, float smoothSpeed)
 {
-	if (camera == nullptr) return;
+	if (camera == nullptr)
+	{
+		std::cout << "[GraphicsEngine] Camera is null." << std::endl;
+		return;
+	}
+
 	camera->Follow(target, distance, frameTime, smoothSpeed);
 }
 
 void Graphics::Render()
 {
-	if (camera == nullptr) return;
+	if (camera == nullptr)
+	{
+		std::cout << "[GraphicsEngine] Camera is null." << std::endl;
+		return;
+	}
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(0.1f, 0.0f, 0.12f, 1.0f);
@@ -204,7 +261,7 @@ void Graphics::Render()
 	for (uint32_t i = 0; i < MRSlots.size(); i++)
 	{
 		if (MRSlots[i].alive)
-			MRSlots[i].renderer.Draw(camera->GetProjectionMatrix() * camera->GetViewMatrix());
+			MRSlots[i].renderer->Draw(camera->GetProjectionMatrix() * camera->GetViewMatrix());
 	}
 }
 
@@ -218,83 +275,5 @@ extern "C"
 	GRAPHICS_API void DestroyGraphicsEngine(IGraphics *graphicsEngine)
 	{
 		delete graphicsEngine;
-	}
-
-	// @TODO: Receive int instead of MeshType and ShaderType, and break if the received value is invalid
-	GRAPHICS_API MeshRenderer* CreateMeshRenderer(Graphics* graphics, MeshType meshType,
-		ShaderType shaderType, Vec3 position, Vec3 scale, Vec3 color,
-		const char* vertexShaderPath, const char* fragmentShaderPath)
-	{
-		Mesh mesh = MeshFactory::CreateMesh(meshType, color);
-		MeshBuffer* meshBuffer = new MeshBuffer();
-		meshBuffer->LoadMeshData(mesh, shaderType);
-
-		MeshRenderer* newMeshRenderer = new MeshRenderer(meshBuffer, position, scale);
-
-		if (graphics == nullptr)
-			return newMeshRenderer;
-
-		uint32_t shaderProgram = graphics->CreateShaderProgram(vertexShaderPath, fragmentShaderPath);
-		newMeshRenderer->SetShaderProgram(shaderProgram);
-		newMeshRenderer->InitUniforms();
-		graphics->AddMeshRenderer(newMeshRenderer);
-
-		return newMeshRenderer;
-	}
-
-	GRAPHICS_API void UpdateMeshRendererPosition(MeshRenderer* meshRenderer, Vec3 newPosition)
-	{
-		meshRenderer->SetPosition(newPosition);
-	}
-
-	GRAPHICS_API void RotateCamera(Graphics* graphics, float xOffset, float yOffset)
-	{
-		graphics->GetCamera()->Rotate(xOffset, yOffset);
-	}
-
-	GRAPHICS_API void CameraOrbit(Graphics* graphics, Vec3 target, float distance, float xOffset, float yOffset, float frameTime, float smoothSpeed)
-	{
-		graphics->GetCamera()->Orbit(target, distance, xOffset, yOffset, frameTime, smoothSpeed);
-	}
-
-	GRAPHICS_API void MoveCamera(Graphics* graphics, Utils::Direction direction, float franeTime)
-	{
-		graphics->GetCamera()->Move(direction, franeTime);
-	}
-
-	GRAPHICS_API void CameraFollow(Graphics* graphics, Vec3 target, float distance, float frameTime, float smoothSpeed)
-	{
-		graphics->GetCamera()->Follow(target, distance, frameTime, smoothSpeed);
-	}
-
-	GRAPHICS_API int LoadTextureToMeshRenderer(const char* textureFileName, MeshRenderer* meshRenderer)
-	{
-		if(meshRenderer == nullptr)
-		{
-			std::cout << "[GraphicsApi] MeshRenderer is null. Cannot load texture." << std::endl;
-			return -1;
-		}
-
-		TextureLoader textureLoader;
-		 int textureID = textureLoader.LoadTexture(textureFileName);
-		 if (textureID == -1)
-		 {
-			 std::cout << "[GraphicsApi] Failed to load texture: " << textureFileName << std::endl;
-			 return -1;
-		 }
-
-		 meshRenderer->SetTexture(textureID);
-		 
-		 return textureID;
-	}
-	void SetTextureTilingToMeshRenderer(MeshRenderer* meshRenderer, Vec2 tiling)
-	{
-		if(meshRenderer == nullptr)
-		 {
-			 std::cout << "[GraphicsApi] MeshRenderer is null. Cannot set texture tiling." << std::endl;
-			 return;
-		}
-
-		meshRenderer->SetTextureTiling(tiling);
 	}
 }

@@ -12,20 +12,12 @@ class Camera;
 
 struct MeshRendererSlot
 {
-    MeshRenderer renderer;
-
-	// CHECK THIS: generation in MeshRendererSlot AND in MeshRendererHandle?
+    std::unique_ptr<MeshRenderer> renderer;
     uint32_t generation;
     bool alive;
 
-	MeshRendererSlot(MeshRenderer&& r, uint32_t gen, bool a)
-        : renderer(std::move(r)), generation(gen), alive(a) {}
-
-	MeshRendererSlot(std::unique_ptr<MeshBuffer> buffer, Vec3 pos, Vec3 scale,
-                 uint32_t gen, bool alive)
-    : renderer(std::move(buffer), pos, scale),
-      generation(gen),
-      alive(alive) {}
+	MeshRendererSlot(std::unique_ptr<MeshRenderer> r, uint32_t gen, bool a)
+        : renderer(std::move(r)), generation(gen), alive(a) { }
 
 	MeshRendererSlot(const MeshRendererSlot&) = delete;
     MeshRendererSlot& operator=(const MeshRendererSlot&) = delete;
@@ -40,13 +32,11 @@ public:
 	Graphics(CameraParams cameraParams, GLADloadproc loadProc);
 	~Graphics();
 
-
 	Graphics(const Graphics&) = delete;
     Graphics& operator=(const Graphics&) = delete;
 
     Graphics(Graphics&&) = default;
     Graphics& operator=(Graphics&&) = default;
-
 
 	uint32_t CreateShaderProgram(const char* vertexShaderPath,
 		const char* fragmentShaderPath) override;
@@ -59,8 +49,13 @@ public:
 										Vec3 color = Vec3(1.0f, 1.0f, 1.0f),
 										const char* vertexShaderPath = "", 
 										const char* fragmentShaderPath = "") override;
+	
+	void DestroyMeshRenderer(MeshRendererHandle meshHandle);
+	void DestroyMeshRenderer(MeshRendererHandle meshHandle);
 	void UpdateMeshRendererPosition(MeshRendererHandle meshHandle, Vec3 newPosition) override;
+	bool IsValidMeshRenderer(MeshRendererHandle meshHandle);
 	int LoadTextureToMeshRenderer(const char* textureFileName, MeshRendererHandle meshHandle) override;
+	void SetTextureTilingToMeshRenderer(MeshRendererHandle meshHandle, Vec2 tiling) override;
 
 	void RotateCamera(float xOffset, float yOffset) override;
 	void CameraOrbit(Vec3 target, float distance, float xOffset, float yOffset, float frameTime, float smoothSpeed) override;
@@ -68,10 +63,8 @@ public:
 	void CameraFollow(Vec3 target, float distance, float frameTime, float smoothSpeed) override;
 
 	void Render() override;
-	
-private:
-	bool IsValidMeshRenderer(MeshRendererHandle mrHandle);
 
+private:
 	Camera* camera = nullptr;
 	std::vector<MeshRendererSlot> MRSlots;
 

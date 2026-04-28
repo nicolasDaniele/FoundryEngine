@@ -1,11 +1,12 @@
 #include <iostream>
+#include <cassert>
 #include "PhysicsEngine/PhysicsApi.h"
 #include "PhysicsEngine/PhysicsSystem.h"
 #include "PhysicsEngine/RigidbodyVolume.h"
 
 Physics::Physics()
 {
-	physicsSystem = new PhysicsSystem();
+	physicsSystem = new PhysicsSystem(this);
 }
 
 Physics::~Physics()
@@ -13,38 +14,64 @@ Physics::~Physics()
 	delete physicsSystem;
 }
 
-// @TODO: Print error message if Rigidbody is not valid (in every function)
-
 RigidbodyHandle Physics::CreateRigidbody(int bodyType, const Vec3& position,
 		float mass, float friction,	float coefitientOfRestitution)
 {
-	for (uint32_t i = 0; i < RBSlots.size(); i++)
+    uint32_t index = 0;
+
+    for (uint32_t i = 0; i < RBSlots.size(); i++)
+    {
+        if (!RBSlots[i].alive)
+        {
+            index = i;
+            RBSlots[i].alive = true;
+            RBSlots[i].generation++;
+
+            RBSlots[i].rigidbody = std::make_unique<RigidbodyVolume>(
+                bodyType, position, mass, friction, coefitientOfRestitution
+            );
+
+            break;
+        }
+    }
+
+    if (index == 0 && (RBSlots.empty() || RBSlots[0].alive))
+    {
+        index = (uint32_t)RBSlots.size();
+
+        RBSlots.emplace_back(
+            std::make_unique<RigidbodyVolume>(
+                bodyType, position, mass, friction, coefitientOfRestitution
+            ),
+            0,
+            true
+        );
+    }
+
+    auto& slot = RBSlots[index];
+    auto* rb = slot.rigidbody.get();
+
+    RigidbodyHandle handle{ index, slot.generation };
+    rb->SetHandle(handle);
+
+    if (physicsSystem && rb)
+        physicsSystem->AddRigidbody(rb);
+
+    return handle;
+}
+
+void Physics::DestroyRigidbody(RigidbodyHandle rbHandle)
+{
+    if (!IsValidRigidbodyHandle(rbHandle))
 	{
-		if (!RBSlots[i].alive)
-		{
-			RBSlots[i].alive = true;
-			RBSlots[i].generation++;
-
-			RBSlots[i].rigidbody = std::make_unique<RigidbodyVolume>(
-						bodyType, position, mass, friction, coefitientOfRestitution);
-
-			return { i, RBSlots[i].generation };
-		}
+		std::cout << "[PhysicsEngine] Invalid RigidbodyHandle." << std::endl;
+		return;
 	}
 
-	RBSlots.emplace_back(
-		std::make_unique<RigidbodyVolume>(
-			bodyType, position, mass, friction, coefitientOfRestitution),
-		0,
-		true
-	);
-
-	uint32_t index = (uint32_t)(RBSlots.size() - 1);
-	auto* rb = RBSlots[index].rigidbody.get();
-	if (physicsSystem && rb)
-		physicsSystem->AddRigidbody(rb);
-	
-	return { index, 0 };
+    auto& slot = RBSlots[rbHandle.index];
+    slot.rigidbody.reset();
+    slot.alive = false;
+    slot.generation++;
 }
 
 void Physics::SetRigidbodyBoxHalfExtents(RigidbodyHandle rbHandle, const Vec3& halfExtents)
@@ -82,21 +109,49 @@ void Physics::SetRigidbodySphereRadius(RigidbodyHandle rbHandle, const float rad
 void Physics::SetRigidbodySphereCenter(RigidbodyHandle rbHandle, const Vec3& center)
 {
 	auto* volume = GetVolume(rbHandle);
-	if (!volume || volume->type != 2) return;
+	if (!volume || volume->type != 2)
+	{
+		std::cout << "[PhysicsEngine] Invalid RigidbodyHandle." << std::endl;
+		return;
+	}
 
 	volume->SetSphereCenter(center);
 }
 
 Vec3 Physics::GetRigidbodyPosition(RigidbodyHandle rbHandle)
 {
+	if(!IsValidRigidbodyHandle(rbHandle))
+	{
+		std::cout << "[PhysicsEngine] Invalid RigidbodyHandle." << std::endl;
+		return Vec3(0.0f, 0.0f, 0.0f);
+	} 
+
 	auto* rb = RBSlots[rbHandle.index].rigidbody.get();
 	if (!rb) return Vec3(0.0f, 0.0f, 0.0f);
 
 	return rb->GetPosition();
 }
 
+void Physics::AddCollisionListenerToRigidbody(RigidbodyHandle rbHandle, ICollisionListener* listener)
+{
+	if(!IsValidRigidbodyHandle(rbHandle) || !listener)
+	{
+		std::cout << "[PhysicsEngine] Invalid RigidbodyHandle or ICollisionListener." << std::endl;
+		return;
+	}
+
+	auto* rb = RBSlots[rbHandle.index].rigidbody.get();
+	rb->AddCollisionListener(listener);
+}
+
 void Physics::AddLinearImpulseToRigidbody(RigidbodyHandle rbHandle, const Vec3& impulse)
 {
+	if(!IsValidRigidbodyHandle(rbHandle))
+	{
+		std::cout << "[PhysicsEngine] Invalid RigidbodyHandle." << std::endl;
+		return;
+	} 
+
 	auto* rb = RBSlots[rbHandle.index].rigidbody.get();
 	auto* volume = dynamic_cast<RigidbodyVolume*>(rb);
 	if (!volume) return;
@@ -104,28 +159,45 @@ void Physics::AddLinearImpulseToRigidbody(RigidbodyHandle rbHandle, const Vec3& 
 	volume->AddLinearImpulse(impulse);
 }
 
-bool Physics::IsValidRigidbody(RigidbodyHandle rbHandle)
+bool Physics::IsValidRigidbodyHandle(RigidbodyHandle rbHandle)
 {
     return rbHandle.index < RBSlots.size() &&
            RBSlots[rbHandle.index].alive &&
            RBSlots[rbHandle.index].generation == rbHandle.generation;
 }
 
-RigidbodyVolume* Physics::GetVolume(RigidbodyHandle handle)
+RigidbodyVolume* Physics::GetVolume(RigidbodyHandle rbHandle)
 {
-	if (!IsValidRigidbody(handle)) return nullptr;
+	if(!IsValidRigidbodyHandle(rbHandle))
+	{
+		std::cout << "[PhysicsEngine] Invalid RigidbodyHandle." << std::endl;
+		return nullptr;
+	} 
 
-	auto* rb = RBSlots[handle.index].rigidbody.get();
-	if (!rb) return nullptr;
-
+	auto* rb = RBSlots[rbHandle.index].rigidbody.get();
 	return dynamic_cast<RigidbodyVolume*>(rb);
 }
 
 void Physics::Update(float frameTime)
 {
-	if(!physicsSystem) return;
+	if(!physicsSystem)
+	{
+		std::cout << "[PhysicsEngine] PhysicsSystem is null." << std::endl;
+		return;
+	}
 
 	physicsSystem->Update(frameTime);
+}
+
+Rigidbody* Physics::GetRigidbodyFromHandle(RigidbodyHandle rbHandle)
+{
+	if(!IsValidRigidbodyHandle(rbHandle))
+	{
+		std::cout << "[PhysicsEngine] Invalid RigidbodyHandle." << std::endl;
+		return nullptr;
+	} 
+
+	return RBSlots[rbHandle.index].rigidbody.get();
 }
 
 extern "C"

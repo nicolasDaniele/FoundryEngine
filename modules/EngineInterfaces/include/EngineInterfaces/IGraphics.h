@@ -12,6 +12,7 @@
 #include "GraphicsTypes.h"
 #include "GraphicsPublicData.h"
 
+using Vec2 = CoreMath::Vec2;
 using Vec3 = CoreMath::Vec3;
 using Mat4 = CoreMath::Mat4;
 
@@ -45,6 +46,7 @@ public:
 										const char* fragmentShaderPath = "") = 0;
 	virtual void UpdateMeshRendererPosition(MeshRendererHandle meshHandle, Vec3 newPosition) = 0;
 	virtual int LoadTextureToMeshRenderer(const char* textureFileName, MeshRendererHandle meshHandle) = 0;
+	virtual void SetTextureTilingToMeshRenderer(MeshRendererHandle meshHandle, Vec2 tiling) = 0;
 
     virtual void Render() = 0;
 };

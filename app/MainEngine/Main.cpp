@@ -3,19 +3,11 @@
 #include <iostream>
 #include "Core/Geometry3D.h"
 #include "Core/Vectors.h"
-<<<<<<< HEAD
 #include "Debugger/DebugRenderer.h"
 #include "EngineInterfaces/IGraphics.h"
 #include "EngineInterfaces/IPhysics.h"
 #include "EngineInterfaces/GraphicsPublicData.h"
-=======
-#include "GraphicsEngine/GraphicsApi.h"
-#include "Debugger/DebugRenderer.h"
-#include "PhysicsEngine/PhysicsApi.h"
-#include "EngineInterfaces/PhysicsInterfaces.h"
-#include "PhysicsEngine/Rigidbody.h"
 #include "GameplayObjects/PlayerObject.h"
->>>>>>> texture_fixes_collision_events_&_player_object
 
 using Vec2 = CoreMath::Vec2;
 using Vec3 = CoreMath::Vec3;
@@ -50,7 +42,7 @@ IGraphics* graphics = nullptr;
 IPhysics* physics = nullptr;
 
 float playerSpeed = 10.0f;
-float playerJumpImpulse = 1500.0f;
+float playerJumpImpulse = 1000.0f;
 PlayerObject* player = nullptr;
 
 void HandleInput(GLFWwindow* window, float frameTime);
@@ -60,7 +52,6 @@ static void glfwError(int id, const char* description)
 {
 	std::cout << description << std::endl;
 }
-
 
 int main()
 {
@@ -99,7 +90,7 @@ int main()
 	graphics = GetGraphicsEngine(cameraParams, (GLADloadproc)glfwGetProcAddress);
 	if (!graphics)
 	{
-		std::cout << "Graphics engine is NULL\n";
+		std::cout << "[MainEngine] GraphicsEngine is NULL" << std::endl;
 		std::cin.get();
 		return -1;
 	}
@@ -116,20 +107,15 @@ int main()
 		Vec3(0.2f, 0.8f, 0.2f), // Color
 		TEXTURED_VS_PATH, TEXTURED_FS_PATH);
 
-<<<<<<< HEAD
 	int textureId = graphics->LoadTextureToMeshRenderer(WOOD_TEXTURE_PATH, floorRenderer);
 	if (textureId == -1)
-=======
-	int woodTtextureId = LoadTextureToMeshRenderer(WOOD_TEXTURE_PATH, floorRenderer);
-	if (woodTtextureId == -1)
->>>>>>> texture_fixes_collision_events_&_player_object
 	{
-		std::cout << "Texture could not be loaded for floorRenderer\n";
+		std::cout << "[MainEngine] Texture could not be loaded for floorRenderer." << std::endl;
 		std::cin.get();
 		return -1;
 	}
 
-	SetTextureTilingToMeshRenderer(floorRenderer, Vec2(1.0f, 50.0f));
+	graphics->SetTextureTilingToMeshRenderer(floorRenderer, Vec2(1.0f, 50.0f));
 
 
 	// ------------------- END GRAHICS SETUP ------------------- \\
@@ -154,14 +140,13 @@ int main()
 	physics = GetPhysicsEngine();
 	if (!physics)
 	{
-		std::cout << "Physics system is NULL\n";
+		std::cout << "[MainEngine] PhysicsEngine is NULL" << std::endl;
 		std::cin.get();
 		return -1;
 	}
 
 	float collisionRestitution = 0.7f;
 
-<<<<<<< HEAD
 	ballVolume = physics->CreateRigidbody(2, ballPosition, 1.0f, 1.0f, collisionRestitution);
 	physics->SetRigidbodySphereRadius(ballVolume, ballDebug.radius);
 
@@ -169,23 +154,11 @@ int main()
 	physics->SetRigidbodyBoxHalfExtents(floorVolume, floorDebug.halfExtents);
 	physics->SetRigidbodyBoxCenter(floorVolume, floorDebug.center);
 	physics->SetRigidbodyBoxOrientation(floorVolume, floorDebug.orientation);
-=======
-	ballVolume = GetRigidbody(2, ballPosition, 1.0f, 1.0f, 0.0f);
-	SetRigidbodySphereRadius(ballVolume, ballDebug.radius);
-
-	floorVolume = GetRigidbody(3, floorPosition, 0.0f, 1.0f, 0.0f);
-	SetRigidbodyBoxHalfExtents(floorVolume, floorDebug.halfExtents);
-	SetRigidbodyBoxCenter(floorVolume, floorDebug.center);
-	SetRigidbodyBoxOrientation(floorVolume, floorDebug.orientation);
-
-	AddRigidbodyToPhysicsSystem((Rigidbody*)ballVolume, physics);
-	AddRigidbodyToPhysicsSystem((Rigidbody*)floorVolume, physics);
->>>>>>> texture_fixes_collision_events_&_player_object
 
 	// --------------------- END PHYSICS SETUP --------------------- \\
 
 
-	player = new PlayerObject((RigidbodyVolume*)ballVolume, ballRenderer, playerSpeed, playerJumpImpulse);
+	player = new PlayerObject(ballVolume, ballRenderer, physics, graphics);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -194,57 +167,40 @@ int main()
 		lastFrame = currentFrame;
 
 		// Physics update
-<<<<<<< HEAD
 		physics->Update(frameTime);
 
 		// Graphics update
 		ballPosition = physics->GetRigidbodyPosition(ballVolume);
 		graphics->UpdateMeshRendererPosition(ballRenderer, ballPosition);
-=======
-		UpdatePhysicsSystem(physics, frameTime);
->>>>>>> texture_fixes_collision_events_&_player_object
 		
 		floorPosition = physics->GetRigidbodyPosition(floorVolume);
 		graphics->UpdateMeshRendererPosition(floorRenderer, floorPosition);
-
-<<<<<<< HEAD
-		graphics->CameraFollow(ballPosition, 10.0f, frameTime, 6.0f);
-=======
-		if (player != nullptr)
-			CameraFollow(graphics, player->GetPosition(), 10.0f, frameTime, 6.0f);
->>>>>>> texture_fixes_collision_events_&_player_object
-
-		glfwSwapBuffers(window);
+		
 		glfwPollEvents();
 		HandleInput(window, frameTime);
-
-<<<<<<< HEAD
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-			graphics->CameraOrbit(ballPosition, 10.0f, mouseXOffset, mouseYOffset, frameTime, 6.0f);
-
-		mouseXOffset = 0.0f;
-		mouseYOffset = 0.0f;
-	
-=======
-		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && player != nullptr)
-			CameraOrbit(graphics, player->GetPosition(), 10.0f, mouseXOffset, mouseYOffset, frameTime, 6.0f);
-
-		mouseXOffset = 0.0f;
-		mouseYOffset = 0.0f;
 		
->>>>>>> texture_fixes_collision_events_&_player_object
+		if (player != nullptr)
+			graphics->CameraFollow(player->GetPosition(), 10.0f, frameTime, 6.0f);
+
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && player != nullptr)
+			graphics->CameraOrbit(player->GetPosition(), 10.0f, mouseXOffset, mouseYOffset, frameTime, 6.0f);
+		
+		mouseXOffset = 0.0f;
+		mouseYOffset = 0.0f;
+			
 		// Debug update
 		ballDebug.center = ballPosition;
 		floorDebug.center = floorPosition;
-
+		
 		debugRenderer->Clear();
 		debugRenderer->AddSphere(ballDebug);
 		debugRenderer->AddBox(floorDebug);
 		debugRenderer->DrawDebug(Vec3(1.0f, 0.0f, 0.0f));
-
+		
 		player->Update(frameTime);
-
+		
 		graphics->Render();
+		glfwSwapBuffers(window);
 	}
 
 	delete player;
@@ -265,24 +221,6 @@ void HandleInput(GLFWwindow* window, float frameTime)
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS && player != nullptr)
 		player->Move(Vec3(-playerSpeed, 0.0f, 0.0f) * frameTime);
 
-<<<<<<< HEAD
-	// Ball Movement
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		physics->AddLinearImpulseToRigidbody(ballVolume, Vec3(-speed, 0.0f, 0.0f) * frameTime);
-
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		physics->AddLinearImpulseToRigidbody(ballVolume, Vec3(speed, 0.0f, 0.0f) * frameTime);
-
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		physics->AddLinearImpulseToRigidbody(ballVolume, Vec3(0.0f, 0.0f, -speed) * frameTime);
-
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		physics->AddLinearImpulseToRigidbody(ballVolume, Vec3(0.0f, 0.0f, speed) * frameTime);
-
-
-	if (glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
-		physics->AddLinearImpulseToRigidbody(ballVolume, Vec3(0.0f, verticalVel, 0.0f) * frameTime);
-=======
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS && player != nullptr)
 		player->Move(Vec3(playerSpeed, 0.0f, 0.0f) * frameTime);
 
@@ -295,13 +233,15 @@ void HandleInput(GLFWwindow* window, float frameTime)
 	// Player Jump
 	if (glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS && player != nullptr)
 		player->Jump(playerJumpImpulse * frameTime);
->>>>>>> texture_fixes_collision_events_&_player_object
 }
 
 void OrbitCamera_Callback(GLFWwindow* window, double xPosIn, double yPosIn)
 {
 	if(graphics == nullptr)
+	{
+		std::cout << "[MainEngine] GraphicsEngine is NULL" << std::endl;
 		return;
+	}
 
 	float xPos = static_cast<float>(xPosIn);
 	float yPos = static_cast<float>(yPosIn);

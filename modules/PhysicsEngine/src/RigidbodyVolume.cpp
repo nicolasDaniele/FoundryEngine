@@ -1,16 +1,13 @@
 #include <iostream>
-#include "PhysicsEngine/RigidbodyVolume.h"
 #include "Core/Geometry3D.h"
 #include "Core/Matrices.h"
 #include "Core/Vectors.h"
 #include "Core/MathDefinitions.h"
-
-uint32_t Rigidbody::nextId = 1;
+#include "PhysicsEngine/RigidbodyVolume.h"
+#include "EngineInterfaces/PhysicsInterfaces.h"
 
 RigidbodyVolume::RigidbodyVolume(int _bodyType, const Vec3& _position, float _mass, float _friction, float _restitution)
 {
-	id = nextId++;
-
 	type = _bodyType;
 	position = _position;
 	mass = _mass;
@@ -74,6 +71,24 @@ float RigidbodyVolume::GetInvMass()
 void RigidbodyVolume::AddLinearImpulse(const Vec3& impulse)
 {
 	velocity = velocity + impulse;
+}
+
+void RigidbodyVolume::NotifyCollisionEnter(RigidbodyHandle self, RigidbodyHandle other, const CollisionData& data)
+{
+	for (auto l : colliders)
+        l->OnCollisionEnter(self, other, data);
+}
+
+void RigidbodyVolume::NotifyCollisionStay(RigidbodyHandle self, RigidbodyHandle other, const CollisionData& data)
+{
+	for (auto l : colliders)
+        l->OnCollisionStay(self, other, data);
+}
+
+void RigidbodyVolume::NotifyCollisionExit(RigidbodyHandle self, RigidbodyHandle other)
+{
+	for (auto l : colliders)
+        l->OnCollisionExit(self, other);
 }
 
 Mat3 RigidbodyVolume::GetInvTensor()

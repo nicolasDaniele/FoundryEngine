@@ -36,6 +36,10 @@ public:
 	float GetInvMass();
 	void AddLinearImpulse(const Vec3& impulse);
 
+	void NotifyCollisionEnter(RigidbodyHandle self, RigidbodyHandle other, const CollisionData& data);
+	void NotifyCollisionStay(RigidbodyHandle self, RigidbodyHandle other, const CollisionData& data);
+	void NotifyCollisionExit(RigidbodyHandle self, RigidbodyHandle other);
+
 	Mat3 GetInvTensor();
 	virtual void AddRotationalImpulse(const Vec3& point, const Vec3& impulse);
 

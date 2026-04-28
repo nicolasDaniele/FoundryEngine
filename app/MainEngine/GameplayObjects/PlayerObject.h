@@ -1,18 +1,18 @@
 #pragma once
 
-#include "PhysicsEngine/PhysicsApi.h"
 #include "EngineInterfaces/PhysicsInterfaces.h"
-
-class MeshRenderer;
-class RigidbodyVolume;
+#include "EngineInterfaces/IPhysics.h"
+#include "EngineInterfaces/IGraphics.h"
 
 class PlayerObject : public ICollisionListener
 {
 public:
-	PlayerObject(RigidbodyVolume* _body, MeshRenderer* _renderer, float _moveSpeed, float _jumpImpulse)
-		: body(_body), renderer(_renderer), moveSpeed(_moveSpeed), jumpImpulse(_jumpImpulse) 
+	PlayerObject(RigidbodyHandle _body, MeshRendererHandle _renderer,
+	             IPhysics* _physics, IGraphics* _graphics)
+		: body(_body), renderer(_renderer),
+		  physics(_physics), graphics(_graphics)
 	{
-		AddCollisionListenerToRigidbody(body, this);
+		physics->AddCollisionListenerToRigidbody(_body, this);
 	}
 
 	bool IsGrounded() const { return isGrounded; }
@@ -20,42 +20,40 @@ public:
 
 	void Move(const Vec3& velocity)
 	{
-		AddLinearImpulseToRigidbody((RigidbodyVolume*)body, velocity);
+		physics->AddLinearImpulseToRigidbody(body, velocity);
 	}
 
-	void Jump(float _impulse)
+	void Jump(float impulse)
 	{
 		if (isGrounded)
-			AddLinearImpulseToRigidbody((RigidbodyVolume*)body, Vec3(0.0f, _impulse, 0.0f));
+			physics->AddLinearImpulseToRigidbody(body, Vec3(0.0f, impulse, 0.0f));
 	}
 
 	void Update(float frameTime)
 	{
-		position = GetRigidbodyPosition((RigidbodyVolume*)body);
-		UpdateMeshRendererPosition(renderer, position);
+		position = physics->GetRigidbodyPosition(body);
+		graphics->UpdateMeshRendererPosition(renderer, position);
 	}
 
-	void OnCollisionEnter(Rigidbody* self, Rigidbody* other, const CollisionData& data) override
+	void OnCollisionEnter(RigidbodyHandle self, RigidbodyHandle other, const CollisionData& data) override
 	{
 		isGrounded = true;
 	}
 
-	void OnCollisionStay(Rigidbody* self, Rigidbody* other, const CollisionData& data) override
+	void OnCollisionStay(RigidbodyHandle self, RigidbodyHandle other, const CollisionData& data) override
 	{
 	}
 
-	void OnCollisionExit(Rigidbody* self, Rigidbody* other) override
+	void OnCollisionExit(RigidbodyHandle self, RigidbodyHandle other) override
 	{
 		isGrounded = false;
 	}
 
 private:
-	RigidbodyVolume* body;
-	MeshRenderer* renderer;
+	RigidbodyHandle body;
+	MeshRendererHandle renderer;
+	IPhysics* physics;
+	IGraphics* graphics;
 	bool isGrounded = true;
-
 	Vec3 position = Vec3(0.0f, 0.0f, 0.0f);
-
-	float moveSpeed = 10.0f;
-	float jumpImpulse = 5.0f;
 };

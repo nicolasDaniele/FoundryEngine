@@ -13,11 +13,11 @@ struct Mesh;
 class MeshRenderer
 {
 public:
-	MeshRenderer() {}
+	MeshRenderer() { }
 	MeshRenderer(std::unique_ptr<MeshBuffer> _meshBuffer, const Vec3& _position = Vec3(0.0f, 0.0f, 0.0f),
 		const Vec3& _scale = Vec3(1.0f, 1.0f, 1.0f))
 		: meshBuffer(std::move(_meshBuffer)), position(_position), scale(_scale) { }
-	~MeshRenderer();
+	~MeshRenderer() = default;
 
 	MeshRenderer(const MeshRenderer&) = delete;
 	MeshRenderer& operator=(const MeshRenderer&) = delete;
@@ -29,9 +29,8 @@ public:
 	void Draw(const Mat4& vp);
 
 	void SetShaderProgram(uint32_t _shader);
-	//void SetMeshBuffer(std::unique_ptr<MeshBuffer> _meshBuffer);
 	void SetTexture(uint32_t _textureID);
-	void SetTextureTiling(const Vec2& _tiling) { textureTiling = _tiling; }
+	void SetTextureTiling(const Vec2& _tiling);
 
 	Vec3 GetPosition() const;
 	void SetPosition(const Vec3& _position);

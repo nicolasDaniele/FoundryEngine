@@ -16,9 +16,10 @@ MeshBuffer::~MeshBuffer()
 	if (vao) glDeleteVertexArrays(1, &vao);
 }
 
-void MeshBuffer::LoadMeshData(const Mesh& mesh, ShaderType shaderType)
+void MeshBuffer::LoadMeshData(const Mesh& mesh, ShaderType _shaderType)
 {
     indexCount = static_cast<uint32_t>(mesh.indices.size());
+    shaderType = _shaderType;
 
     glBindVertexArray(vao);
 
@@ -57,7 +58,7 @@ void MeshBuffer::LoadMeshData(const Mesh& mesh, ShaderType shaderType)
         (void*)offsetof(Vertex, normal)
     );
 
-    switch (shaderType)
+    switch (_shaderType)
     {
     case S_COLOR:
         // color
@@ -95,4 +96,9 @@ void MeshBuffer::Unbind()
 uint32_t MeshBuffer::GetIndexCount() const
 {
     return indexCount;
+}
+
+ShaderType MeshBuffer::GetShaderType() const
+{
+    return shaderType;
 }

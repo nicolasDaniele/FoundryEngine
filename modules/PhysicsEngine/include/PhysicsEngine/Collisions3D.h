@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "Core/Geometry3D.h"
+#include "EngineInterfaces/IPhysics.h"
 
 #define AABBShpere(aabb, sphere)    SphereAABB(sphere, aabb)
 #define OBBShpere(obb, sphere)      SphereOBB(sphere, obb)
@@ -44,12 +45,12 @@ typedef struct CollisionData
 
 struct CollisionKey
 {
-    uint32_t A;
-    uint32_t B;
+    RigidbodyHandle A;
+    RigidbodyHandle B;
 
-    CollisionKey(uint32_t a, uint32_t b)
+    CollisionKey(RigidbodyHandle a, RigidbodyHandle b)
     {
-        if (a < b)
+        if (a.index < b.index)
         {
             A = a;
             B = b;
@@ -63,7 +64,10 @@ struct CollisionKey
 
     bool operator==(const CollisionKey& other) const
     {
-        return A == other.A && B == other.B;
+        return A.index == other.A.index &&
+               A.generation == other.A.generation &&
+               B.index == other.B.index &&
+               B.generation == other.B.generation;
     }
 };
 
@@ -71,10 +75,17 @@ struct CollisionKeyHash
 {
     size_t operator()(const CollisionKey& key) const
     {
-        size_t h1 = std::hash<uint32_t>()(key.A);
-        size_t h2 = std::hash<uint32_t>()(key.B);
+        size_t h1 = std::hash<uint32_t>()(key.A.index);
+        size_t h2 = std::hash<uint32_t>()(key.A.generation);
+        size_t h3 = std::hash<uint32_t>()(key.B.index);
+        size_t h4 = std::hash<uint32_t>()(key.B.generation);
 
-        return h1 ^ (h2 + 0x9e3779b9 + (h1 << 6) + (h1 >> 2));
+        size_t h = h1;
+        h ^= h2 + 0x9e3779b9 + (h << 6) + (h >> 2);
+        h ^= h3 + 0x9e3779b9 + (h << 6) + (h >> 2);
+        h ^= h4 + 0x9e3779b9 + (h << 6) + (h >> 2);
+
+        return h;
     }
 };
 
