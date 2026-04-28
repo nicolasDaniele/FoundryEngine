@@ -51,7 +51,6 @@ public:
 										const char* fragmentShaderPath = "") override;
 	
 	void DestroyMeshRenderer(MeshRendererHandle meshHandle);
-	void DestroyMeshRenderer(MeshRendererHandle meshHandle);
 	void UpdateMeshRendererPosition(MeshRendererHandle meshHandle, Vec3 newPosition) override;
 	bool IsValidMeshRenderer(MeshRendererHandle meshHandle);
 	int LoadTextureToMeshRenderer(const char* textureFileName, MeshRendererHandle meshHandle) override;
