@@ -70,6 +70,14 @@ void MeshBuffer::LoadMeshData(const Mesh& mesh, ShaderType _shaderType)
         );
         break;
     case S_TEXTURE:
+        // color
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(
+            2, 3, GL_FLOAT, GL_FALSE,
+            sizeof(Vertex),
+            (void*)offsetof(Vertex, color)
+        );
+
         // texcoord
         glEnableVertexAttribArray(3);
         glVertexAttribPointer(

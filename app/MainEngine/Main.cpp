@@ -42,7 +42,7 @@ IGraphics* graphics = nullptr;
 IPhysics* physics = nullptr;
 
 float playerSpeed = 10.0f;
-float playerJumpImpulse = 1000.0f;
+float playerJumpImpulse = 2500.0f;
 PlayerObject* player = nullptr;
 
 void HandleInput(GLFWwindow* window, float frameTime);
@@ -104,7 +104,7 @@ int main()
 	MeshRendererHandle floorRenderer = graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
 		floorPosition,
 		floorSize,
-		Vec3(0.2f, 0.8f, 0.2f), // Color
+		Vec3(0.9f, 0.2f, 0.0f), // Color
 		TEXTURED_VS_PATH, TEXTURED_FS_PATH);
 
 	int textureId = graphics->LoadTextureToMeshRenderer(WOOD_TEXTURE_PATH, floorRenderer);
@@ -192,14 +192,14 @@ int main()
 		ballDebug.center = ballPosition;
 		floorDebug.center = floorPosition;
 		
-		debugRenderer->Clear();
-		debugRenderer->AddSphere(ballDebug);
-		debugRenderer->AddBox(floorDebug);
-		debugRenderer->DrawDebug(Vec3(1.0f, 0.0f, 0.0f));
 		
 		player->Update(frameTime);
 		
 		graphics->Render();
+		debugRenderer->Clear();
+		debugRenderer->AddSphere(ballDebug);
+		debugRenderer->AddBox(floorDebug);
+		debugRenderer->DrawDebug(Vec3(1.0f, 1.0f, 0.0f));
 		glfwSwapBuffers(window);
 	}
 
