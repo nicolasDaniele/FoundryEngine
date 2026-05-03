@@ -13,22 +13,22 @@ namespace CoreGeometry
 
 	typedef struct Line
 	{
-		Point start;
-		Point end;
+		Point start = Point();
+		Point end = Point();
 
 		inline Line() { }
-		inline Line(const Point& s, const Point& e) :
-			start(s), end(e) { }
+		inline Line(const Point& _start, const Point& _end) :
+			start(_start), end(_end) { }
 	} Line;
 
 	typedef struct Ray
 	{
-		Point origin;
-		Vec3 direction;
+		Point origin = Point();
+		Vec3 direction = Vec3();
 
 		inline Ray() : direction(0.0f, 0.0f, 1.0f) { }
-		inline Ray(const Point& o, const Vec3& d) :
-			origin(o), direction(d)
+		inline Ray(const Point& _origin, const Vec3& _direction) :
+			origin(_origin), direction(_direction)
 		{
 			NormalizeDirection();
 		}
@@ -40,45 +40,45 @@ namespace CoreGeometry
 
 	typedef struct Sphere
 	{
-		Point center;
-		float radius;
+		Point center = Vec3();
+		float radius = 0.0f;
 
 		inline Sphere() : radius(1.0f) { }
-		inline Sphere(const Point& p, float r) :
-			center(p), radius(r) { }
+		inline Sphere(const Point& _center, float _radius) :
+			center(_center), radius(_radius) { }
 	} Sphere;
 
 	typedef struct AABB
 	{
-		Point center;
-		Vec3 halfExtents;
+		Point center = Point();
+		Vec3 halfExtents = Vec3();
 
-		inline AABB() : halfExtents(1, 1, 1) { }
-		inline AABB(const Point& p, const Vec3& s) :
-			center(p), halfExtents(s) { }
+		inline AABB() : halfExtents(1.0f) { }
+		inline AABB(const Point& _center, const Vec3& _halfExtents) :
+			center(_center), halfExtents(_halfExtents) { }
 	} AABB;
 
 	typedef struct OBB
 	{
-		Point center;
-		Vec3 halfExtents;
-		Mat3 orientation;
+		Point center = Point();
+		Vec3 halfExtents = Vec3();
+		Mat3 orientation = Mat3();
 
 		inline OBB() : halfExtents(1, 1, 1) { }
-		inline OBB(const Point& p, const Vec3& s) :
-			center(p), halfExtents(s) { }
-		inline OBB(const Point& p, const Vec3& s, const Mat3& o) :
-			center(p), halfExtents(s), orientation(o) { }
+		inline OBB(const Point& _center, const Vec3& _halfExtents) :
+			center(_center), halfExtents(_halfExtents) { }
+		inline OBB(const Point& _center, const Vec3& _halfExtents, const Mat3& _orientation) :
+			center(_center), halfExtents(_halfExtents), orientation(_orientation) { }
 	} OBB;
 
 	typedef struct Plane
 	{
-		Vec3 normal;
-		float distance;
+		Vec3 normal = Vec3();
+		float distance = 0.0f;
 
-		inline Plane() : normal(1, 0, 0) { }
-		inline Plane(const Vec3& n, float d) :
-			normal(n), distance(d) { }
+		inline Plane() : normal(1.0f) { }
+		inline Plane(const Vec3& _normal, float _distance) :
+			normal(_normal), distance(_distance) { }
 	} Plane;
 
 	typedef struct Triangle
@@ -103,8 +103,8 @@ namespace CoreGeometry
 
 	typedef struct Interval
 	{
-		float min;
-		float max;
+		float min = 0.0f;
+		float max = 0.0f;
 	} Interval;
 
 	float Lenght(const Line& line);
