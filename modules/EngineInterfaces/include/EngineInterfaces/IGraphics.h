@@ -47,6 +47,8 @@ public:
 	virtual void UpdateMeshRendererPosition(MeshRendererHandle meshHandle, Vec3 newPosition) = 0;
 	virtual int LoadTextureToMeshRenderer(const char* textureFileName, MeshRendererHandle meshHandle) = 0;
 	virtual void SetTextureTilingToMeshRenderer(MeshRendererHandle meshHandle, Vec2 tiling) = 0;
+	virtual Vec3 GetMeshRendererPosition(MeshRendererHandle meshHandle) = 0;
+	virtual Vec3 GetMeshRendererScale(MeshRendererHandle meshHandle) = 0;
 
     virtual void Render() = 0;
 };

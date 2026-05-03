@@ -33,7 +33,6 @@ namespace Debugger
 		uint32_t shaderProgram;
 		std::vector<Vec3> vertices;
 
-		// MOVE THIS FUNCTION TO CoreGeometry?
-		Vec3 CirclePoint(const Vec3& center, float angleRad, float radius);
+		Vec3 CirclePoint(const Vec3& center, float angleRad, float radius, int axis);
 	};
 }

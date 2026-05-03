@@ -31,7 +31,6 @@ namespace Debugger
 
     void DebugRenderer::AddSphere(const Sphere& sphere)
     {
-        // @TODO: This is drawing CIRCLE. Make it draw SPHERE
         for (int axis = 0; axis < 3; axis++)
         {
             for (int i = 0; i < SPHERE_SEGMENTS; i++)
@@ -39,12 +38,41 @@ namespace Debugger
                 float a0 = (i / (float)SPHERE_SEGMENTS) * TWO_PI;
                 float a1 = ((i + 1) / (float)SPHERE_SEGMENTS) * TWO_PI;
 
-                Vec3 p0 = CirclePoint(sphere.center, a0, sphere.radius);
-                Vec3 p1 = CirclePoint(sphere.center, a1, sphere.radius);
+                Vec3 p0 = CirclePoint(sphere.center, a0, sphere.radius, axis);
+                Vec3 p1 = CirclePoint(sphere.center, a1, sphere.radius, axis);
 
                 AddLine(p0, p1);
             }
         }
+    }
+
+    Vec3 DebugRenderer::CirclePoint(const Vec3& center, float angleRad, float radius, int axis)
+    {
+        switch (axis)
+        {
+            case 0: // XZ
+                return Vec3(
+                    center.x + cos(angleRad) * radius,
+                    center.y,
+                    center.z + sin(angleRad) * radius
+                );
+
+            case 1: // XY
+                return Vec3(
+                    center.x + cos(angleRad) * radius,
+                    center.y + sin(angleRad) * radius,
+                    center.z
+                );
+
+            case 2: // YZ
+                return Vec3(
+                    center.x,
+                    center.y + cos(angleRad) * radius,
+                    center.z + sin(angleRad) * radius
+                );
+        }
+
+        return center;
     }
 
     void DebugRenderer::DrawDebug(const Vec3& color)
@@ -57,16 +85,6 @@ namespace Debugger
         );
     }
 
-    Vec3 DebugRenderer::CirclePoint(const Vec3& center, float angleRad, float radius)
-    {
-        return Vec3(
-            center.x + COS(angleRad) * radius,
-            center.y,
-            center.z + SIN(angleRad) * radius
-        );
-    }
-
-    // WHERE to call this?
     void DebugRenderer::Clear()
     {
 	    vertices.clear();

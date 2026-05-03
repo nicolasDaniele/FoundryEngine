@@ -33,6 +33,7 @@ public:
 	void SetTextureTiling(const Vec2& _tiling);
 
 	Vec3 GetPosition() const;
+	Vec3 GetScale() const;
 	void SetPosition(const Vec3& _position);
 	void SetScale(const Vec3& _scale);
 

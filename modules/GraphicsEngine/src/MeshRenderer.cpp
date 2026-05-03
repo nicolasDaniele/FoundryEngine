@@ -66,6 +66,11 @@ Vec3 MeshRenderer::GetPosition() const
 	return position;
 }
 
+Vec3 MeshRenderer::GetScale() const
+{
+	return scale;
+}
+
 void MeshRenderer::SetPosition(const Vec3& _position)
 {
 	position = _position;

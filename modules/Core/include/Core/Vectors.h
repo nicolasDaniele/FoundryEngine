@@ -14,9 +14,9 @@ namespace CoreMath
 			float asArray[2];
 		};
 
-		inline Vec2(float x, float y)
-			: x(x), y(y) {}
+		inline Vec2(float x, float y) : x(x), y(y) {}
 		inline Vec2() : x(0.0f), y(0.0f) {}
+		inline Vec2(float value) : x(value), y(value) {}
 
 		float& operator[](int i)
 		{
@@ -37,9 +37,9 @@ namespace CoreMath
 			float asArray[3];
 		};
 
-		inline Vec3(float x, float y, float z) 
-		: x(x), y(y), z(z) {}
+		inline Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
 		inline Vec3() : x(0.0f), y(0.0f), z(0.0f) {}
+		inline Vec3(float value) : x(value), y(value), z(value) {}
 
 		float& operator[](int i)
 		{

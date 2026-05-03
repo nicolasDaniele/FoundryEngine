@@ -55,6 +55,8 @@ public:
 	bool IsValidMeshRenderer(MeshRendererHandle meshHandle);
 	int LoadTextureToMeshRenderer(const char* textureFileName, MeshRendererHandle meshHandle) override;
 	void SetTextureTilingToMeshRenderer(MeshRendererHandle meshHandle, Vec2 tiling) override;
+	Vec3 GetMeshRendererPosition(MeshRendererHandle meshHandle) override;
+	Vec3 GetMeshRendererScale(MeshRendererHandle meshHandle) override;
 
 	void RotateCamera(float xOffset, float yOffset) override;
 	void CameraOrbit(Vec3 target, float distance, float xOffset, float yOffset, float frameTime, float smoothSpeed) override;

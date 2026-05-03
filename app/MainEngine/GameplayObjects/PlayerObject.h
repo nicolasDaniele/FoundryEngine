@@ -38,15 +38,18 @@ public:
 	void OnCollisionEnter(RigidbodyHandle self, RigidbodyHandle other, const CollisionData& data) override
 	{
 		isGrounded = true;
+		//std::cout << "Enter Collision" << std::endl;
 	}
 
 	void OnCollisionStay(RigidbodyHandle self, RigidbodyHandle other, const CollisionData& data) override
 	{
+		//std::cout << "Stay Collision" << std::endl;
 	}
 
 	void OnCollisionExit(RigidbodyHandle self, RigidbodyHandle other) override
 	{
 		isGrounded = false;
+		//std::cout << "Exit Collision" << std::endl;
 	}
 
 private:
@@ -55,5 +58,5 @@ private:
 	IPhysics* physics;
 	IGraphics* graphics;
 	bool isGrounded = true;
-	Vec3 position = Vec3(0.0f, 0.0f, 0.0f);
+	Vec3 position = Vec3(0.0f);
 };

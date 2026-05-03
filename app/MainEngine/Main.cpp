@@ -3,14 +3,13 @@
 #include <iostream>
 #include "Core/Geometry3D.h"
 #include "Core/Vectors.h"
-#include "Debugger/DebugRenderer.h"
 #include "EngineInterfaces/IGraphics.h"
 #include "EngineInterfaces/IPhysics.h"
 #include "EngineInterfaces/GraphicsPublicData.h"
 #include "GameplayObjects/PlayerObject.h"
 
-using Vec2 = CoreMath::Vec2;
 using Vec3 = CoreMath::Vec3;
+using Vec2 = CoreMath::Vec2;
 
 const int WIDTH = 960;
 const int HEIGHT = 600;
@@ -31,12 +30,8 @@ float mouseYOffset = 0.0f;
 float frameTime = 0.0f;
 float lastFrame = 0.0f;
 
-RigidbodyHandle ballVolume;
-RigidbodyHandle floorVolume;
-CoreGeometry::Sphere ballDebug;
-CoreGeometry::OBB floorDebug;
-
-Vec3 ballPosition;
+std::vector<MeshRendererHandle> floorRenderers;
+std::vector<RigidbodyHandle> floorVolumes;
 
 IGraphics* graphics = nullptr;
 IPhysics* physics = nullptr;
@@ -47,6 +42,7 @@ PlayerObject* player = nullptr;
 
 void HandleInput(GLFWwindow* window, float frameTime);
 void OrbitCamera_Callback(GLFWwindow* window, double xposIn, double yposIn);
+void SetupFloorLayout();
 
 static void glfwError(int id, const char* description)
 {
@@ -69,96 +65,60 @@ int main()
 	glfwSetCursorPosCallback(window, OrbitCamera_Callback);
 	glfwMakeContextCurrent(window);
 
-	// ------------ Objects Variables ------------- \\
-
-	ballPosition = Vec3(0.0f, 1.0f, 1.0f);
-	Vec3 ballSize = Vec3(0.5f, 0.5f, 0.5f);
-
-	Vec3 floorPosition = Vec3(0.0f, -2.0f, 0.0f);
-	Vec3 floorSize = Vec3(6.0f, 0.2f, 300.0f);
-
-	// -------------------- GRAHICS SETUP -------------------- \\
-
+	// -------------------- Engines Initialization -------------------- \\
+	
 	CameraParams cameraParams;
 	cameraParams.fieldOfView = 45.0f;
 	cameraParams.width = WIDTH;
 	cameraParams.height = HEIGHT;
 	cameraParams.nearPlane = 0.1f;
 	cameraParams.farPlane = 100.0f;
-	cameraParams.position = Vec3(0.0f, 1.5f, 16.0f);
-
+	cameraParams.position = Vec3(0.0f, 1.0f, 40.0f);
+	
 	graphics = GetGraphicsEngine(cameraParams, (GLADloadproc)glfwGetProcAddress);
 	if (!graphics)
 	{
-		std::cout << "[MainEngine] GraphicsEngine is NULL" << std::endl;
+		std::cout << "[MainEngine] GraphicsEngine is null." << std::endl;
 		std::cin.get();
 		return -1;
 	}
-
-	MeshRendererHandle ballRenderer = graphics->CreateMeshRenderer(MeshType::M_SPHERE, ShaderType::S_COLOR,
-		ballPosition,
-		ballSize,
-		Vec3(0.4f, 0.4f, 0.4f), // Color
-		FLAT_VS_PATH, FLAT_FS_PATH);
-
-	MeshRendererHandle floorRenderer = graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
-		floorPosition,
-		floorSize,
-		Vec3(0.9f, 0.2f, 0.0f), // Color
-		TEXTURED_VS_PATH, TEXTURED_FS_PATH);
-
-	int textureId = graphics->LoadTextureToMeshRenderer(WOOD_TEXTURE_PATH, floorRenderer);
-	if (textureId == -1)
-	{
-		std::cout << "[MainEngine] Texture could not be loaded for floorRenderer." << std::endl;
-		std::cin.get();
-		return -1;
-	}
-
-	graphics->SetTextureTilingToMeshRenderer(floorRenderer, Vec2(1.0f, 50.0f));
-
-
-	// ------------------- END GRAHICS SETUP ------------------- \\
-
-
-	// ----------------------- DEBUG SETUP ----------------------- \\
-
-	Debugger::DebugRenderer* debugRenderer = new Debugger::DebugRenderer(graphics);
-
-	ballDebug.center = ballPosition;
-	ballDebug.radius = ballSize.y;
-	
-	floorDebug.center = floorPosition;
-	floorDebug.halfExtents = floorSize * 0.5f;
-	floorDebug.orientation = CoreMath::Mat3();
-
-	// ---------------------- END DEBUG SETUP ---------------------- \\
-
-
-	// ---------------------- PHYSICS SETUP ---------------------- \\
 	
 	physics = GetPhysicsEngine();
 	if (!physics)
 	{
-		std::cout << "[MainEngine] PhysicsEngine is NULL" << std::endl;
+		std::cout << "[MainEngine] PhysicsEngine is null." << std::endl;
 		std::cin.get();
 		return -1;
 	}
 
-	float collisionRestitution = 0.7f;
-
-	ballVolume = physics->CreateRigidbody(2, ballPosition, 1.0f, 1.0f, collisionRestitution);
-	physics->SetRigidbodySphereRadius(ballVolume, ballDebug.radius);
-
-	floorVolume = physics->CreateRigidbody(3, floorPosition, 0.0f, 1.0f, collisionRestitution);
-	physics->SetRigidbodyBoxHalfExtents(floorVolume, floorDebug.halfExtents);
-	physics->SetRigidbodyBoxCenter(floorVolume, floorDebug.center);
-	physics->SetRigidbodyBoxOrientation(floorVolume, floorDebug.orientation);
-
-	// --------------------- END PHYSICS SETUP --------------------- \\
+	// ------------------ End Engines Initialization ------------------ \\
 
 
-	player = new PlayerObject(ballVolume, ballRenderer, physics, graphics);
+	// ------------------------ Player Setup ------------------------ \\
+
+	Vec3 ballPosition = Vec3(0.0f, 15.0f, 30.0f);
+	Vec3 ballSize = Vec3(0.5f, 0.5f, 0.5f);
+
+	MeshRendererHandle ballRenderer = graphics->CreateMeshRenderer(MeshType::M_SPHERE, ShaderType::S_COLOR,
+		ballPosition, ballSize,
+		Vec3(0.4f, 0.4f, 0.4f), // Color
+		FLAT_VS_PATH, FLAT_FS_PATH);
+	
+	RigidbodyHandle ballBody = physics->CreateRigidbody(2, ballPosition);
+	physics->SetRigidbodySphereRadius(ballBody, ballSize.y);
+	
+	player = new PlayerObject(ballBody, ballRenderer, physics, graphics);
+	if (!player)
+	{
+		std::cout << "[MainEngine] PlayerObject is null." << std::endl;
+		std::cin.get();
+		return -1;
+	}
+
+	// ---------------------- End Player Setup ---------------------- \\
+
+	// Level Setup	
+	SetupFloorLayout();
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -166,40 +126,23 @@ int main()
 		frameTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		// Physics update
-		physics->Update(frameTime);
-
-		// Graphics update
-		ballPosition = physics->GetRigidbodyPosition(ballVolume);
-		graphics->UpdateMeshRendererPosition(ballRenderer, ballPosition);
-		
-		floorPosition = physics->GetRigidbodyPosition(floorVolume);
-		graphics->UpdateMeshRendererPosition(floorRenderer, floorPosition);
-		
 		glfwPollEvents();
 		HandleInput(window, frameTime);
+
+		physics->Update(frameTime);		
+		player->Update(frameTime);
 		
-		if (player != nullptr)
-			graphics->CameraFollow(player->GetPosition(), 10.0f, frameTime, 6.0f);
+		// Camera Movement
+		graphics->CameraFollow(player->GetPosition(), 10.0f, frameTime, 6.0f);
 
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && player != nullptr)
 			graphics->CameraOrbit(player->GetPosition(), 10.0f, mouseXOffset, mouseYOffset, frameTime, 6.0f);
 		
 		mouseXOffset = 0.0f;
 		mouseYOffset = 0.0f;
-			
-		// Debug update
-		ballDebug.center = ballPosition;
-		floorDebug.center = floorPosition;
 		
-		
-		player->Update(frameTime);
 		
 		graphics->Render();
-		debugRenderer->Clear();
-		debugRenderer->AddSphere(ballDebug);
-		debugRenderer->AddBox(floorDebug);
-		debugRenderer->DrawDebug(Vec3(1.0f, 1.0f, 0.0f));
 		glfwSwapBuffers(window);
 	}
 
@@ -258,4 +201,73 @@ void OrbitCamera_Callback(GLFWwindow* window, double xPosIn, double yPosIn)
 
 	lastMouseXPos = xPos;
 	lastMouseYPos = yPos;
+}
+
+void SetupFloorLayout()
+{
+	// floorRenderer 0
+	floorRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+			Vec3(0.0f, 0.0f, 0.0f),		// Position
+			Vec3(6.0f, 0.2f, 80.0f),	// Size
+			Vec3(0.7f),					// Color
+			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+
+	// floorRenderer 1
+	floorRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+			Vec3(0.0f, -2.0f, -65.0f),	// Position
+			Vec3(6.0f, 0.2f, 50.0f),	// Size
+			Vec3(0.8f),					// Color
+			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+	
+	// floorRenderer 2
+	floorRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+			Vec3(0.0f, 0.0f, -100.0f),	// Position
+			Vec3(3.0f, 0.2f, 20.0f),	// Size
+			Vec3(0.75f),				// Color
+			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+
+	// floorRenderer 3
+	floorRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+			Vec3(4.0f, 1.0f, -115.0f),	// Position
+			Vec3(3.0f, 0.2f, 5.0f),		// Size
+			Vec3(1.0f),					// Color
+			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+
+	// floorRenderer 4
+	floorRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+			Vec3(0.0f, 2.0f, -125.0f),	// Position
+			Vec3(3.0f, 0.2f, 5.0f),		// Size
+			Vec3(0.9f),					// Color
+			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+
+	// floorRenderer 5
+	floorRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+			Vec3(-4.0f, 3.0f, -135.0f),	// Position
+			Vec3(3.0f, 0.2f, 5.0f),		// Size
+			Vec3(0.85f),				// Color
+			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+	
+	
+	for(int i = 0; i < floorRenderers.size(); i++)
+	{
+		int textureId = graphics->LoadTextureToMeshRenderer(WOOD_TEXTURE_PATH, floorRenderers[i]);
+		if (textureId == -1)
+		{
+			std::cout << "[MainEngine] Texture could not be loaded for floofloorRenderer in index." << i << std::endl;
+			std::cin.get();
+			return;
+		}
+
+		float yTiling = graphics->GetMeshRendererScale(floorRenderers[i]).z / 2.0f;
+		graphics->SetTextureTilingToMeshRenderer(floorRenderers[i], Vec2(1.0f, yTiling));
+
+		Vec3 floorPosition = graphics->GetMeshRendererPosition(floorRenderers[i]);
+		CoreGeometry::OBB floorGeomery;
+		floorGeomery.center = floorPosition;
+		floorGeomery.halfExtents = graphics->GetMeshRendererScale(floorRenderers[i]) * 0.5f;
+
+		floorVolumes.push_back(physics->CreateRigidbody(3, floorPosition, 0.0f));
+		physics->SetRigidbodyBoxHalfExtents(floorVolumes[i], floorGeomery.halfExtents);
+		physics->SetRigidbodyBoxCenter(floorVolumes[i], floorGeomery.center);
+	}
 }

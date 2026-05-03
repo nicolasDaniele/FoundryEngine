@@ -203,6 +203,28 @@ void Graphics::SetTextureTilingToMeshRenderer(MeshRendererHandle meshHandle, Vec
 	MRSlots[meshHandle.index].renderer->SetTextureTiling(tiling);
 }
 
+Vec3 Graphics::GetMeshRendererPosition(MeshRendererHandle meshHandle)
+{
+	if (!IsValidMeshRenderer(meshHandle))
+	{
+		std::cout << "[GraphicsEngine] Invalid MeshRendererHandle." << std::endl;
+		return Vec3();
+	}
+
+	return MRSlots[meshHandle.index].renderer->GetPosition();
+}
+
+Vec3 Graphics::GetMeshRendererScale(MeshRendererHandle meshHandle)
+{
+	if (!IsValidMeshRenderer(meshHandle))
+	{
+		std::cout << "[GraphicsEngine] Invalid MeshRendererHandle." << std::endl;
+		return Vec3();
+	}
+
+	return MRSlots[meshHandle.index].renderer->GetScale();
+}
+
 void Graphics::RotateCamera(float xOffset, float yOffset)
 {
 	if (camera == nullptr)

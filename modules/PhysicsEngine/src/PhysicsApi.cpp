@@ -123,11 +123,11 @@ Vec3 Physics::GetRigidbodyPosition(RigidbodyHandle rbHandle)
 	if(!IsValidRigidbodyHandle(rbHandle))
 	{
 		std::cout << "[PhysicsEngine] Invalid RigidbodyHandle." << std::endl;
-		return Vec3(0.0f, 0.0f, 0.0f);
+		return Vec3(0.0f);
 	} 
 
 	auto* rb = RBSlots[rbHandle.index].rigidbody.get();
-	if (!rb) return Vec3(0.0f, 0.0f, 0.0f);
+	if (!rb) return Vec3(0.0f);
 
 	return rb->GetPosition();
 }
