@@ -10,7 +10,7 @@ void MeshRenderer::InitUniforms()
 
 	if(meshBuffer->GetShaderType() == ShaderType::S_TEXTURE)
 	{
-		texLoc = glGetUniformLocation(shader, "Texture");
+		texLoc = glGetUniformLocation(shader, "uTexture");
 		tilingLoc = glGetUniformLocation(shader, "uTiling");
 	}
 }

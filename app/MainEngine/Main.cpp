@@ -14,10 +14,10 @@ using Vec2 = CoreMath::Vec2;
 const int WIDTH = 960;
 const int HEIGHT = 600;
 
-const char* FLAT_VS_PATH = "Assets/Shaders/FlatModel.vs";
-const char* FLAT_FS_PATH = "Assets/Shaders/FlatModel.fs";
-const char* TEXTURED_VS_PATH = "Assets/Shaders/TexturedModel.vs";
-const char* TEXTURED_FS_PATH = "Assets/Shaders/TexturedModel.fs";
+const char* FLAT_VS_PATH = "Assets/Shaders/FlatColor.vs";
+const char* FLAT_FS_PATH = "Assets/Shaders/FlatColor.fs";
+const char* TEXTURED_VS_PATH = "Assets/Shaders/Textured.vs";
+const char* TEXTURED_FS_PATH = "Assets/Shaders/Textured.fs";
 
 const char* WOOD_TEXTURE_PATH = "Assets/Textures/wood.jpg";
 
