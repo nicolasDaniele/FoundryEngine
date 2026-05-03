@@ -1,17 +1,17 @@
 #include <iostream>
 #include <cassert>
 #include "PhysicsEngine/PhysicsApi.h"
-#include "PhysicsEngine/PhysicsSystem.h"
+#include "PhysicsEngine/PhysicsContext.h"
 #include "PhysicsEngine/RigidbodyVolume.h"
 
 Physics::Physics()
 {
-	physicsSystem = new PhysicsSystem(this);
+	physicsContext = new PhysicsContext(this);
 }
 
 Physics::~Physics()
 {
-	delete physicsSystem;
+	delete physicsContext;
 }
 
 RigidbodyHandle Physics::CreateRigidbody(int bodyType, const Vec3& position,
@@ -54,8 +54,8 @@ RigidbodyHandle Physics::CreateRigidbody(int bodyType, const Vec3& position,
     RigidbodyHandle handle{ index, slot.generation };
     rb->SetHandle(handle);
 
-    if (physicsSystem && rb)
-        physicsSystem->AddRigidbody(rb);
+    if (physicsContext && rb)
+        physicsContext->AddRigidbody(rb);
 
     return handle;
 }
@@ -180,13 +180,13 @@ RigidbodyVolume* Physics::GetVolume(RigidbodyHandle rbHandle)
 
 void Physics::Update(float frameTime)
 {
-	if(!physicsSystem)
+	if(!physicsContext)
 	{
-		std::cout << "[PhysicsEngine] PhysicsSystem is null." << std::endl;
+		std::cout << "[PhysicsEngine] PhysicsContext is null." << std::endl;
 		return;
 	}
 
-	physicsSystem->Update(frameTime);
+	physicsContext->Update(frameTime);
 }
 
 Rigidbody* Physics::GetRigidbodyFromHandle(RigidbodyHandle rbHandle)

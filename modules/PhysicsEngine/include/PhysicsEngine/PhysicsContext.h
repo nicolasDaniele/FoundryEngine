@@ -10,11 +10,11 @@ class Physics;
 class Rigidbody;
 class RigidbodyVolume;
 
-class PhysicsSystem
+class PhysicsContext
 {
 public:
-	PhysicsSystem(Physics* _physics);
-	~PhysicsSystem();
+	PhysicsContext(Physics* _physics);
+	~PhysicsContext();
 	void Update(float frameTime);
 	void DetectCollisions();
 	void SolveImpulses(float frameTime);

@@ -1,7 +1,7 @@
 add_library(PhysicsEngine
     SHARED
 	src/Collisions3D.cpp
-	src/PhysicsSystem.cpp
+	src/PhysicsContext.cpp
 	src/PhysicsApi.cpp
 	src/RigidbodyVolume.cpp
 )

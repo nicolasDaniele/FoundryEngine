@@ -5,7 +5,7 @@
 #include "PhysicsEngine/Rigidbody.h"
 #include "EngineInterfaces/IPhysics.h"
 
-class PhysicsSystem;
+class PhysicsContext;
 class RigidbodyVolume;
 
 struct RigidbodySlot
@@ -60,6 +60,6 @@ public:
 private:
 	bool IsValidRigidbodyHandle(RigidbodyHandle rbHandle);
 	RigidbodyVolume* GetVolume(RigidbodyHandle rbHandle);
-	PhysicsSystem* physicsSystem = nullptr;
+	PhysicsContext* physicsContext = nullptr;
 	std::vector<RigidbodySlot> RBSlots;
 };

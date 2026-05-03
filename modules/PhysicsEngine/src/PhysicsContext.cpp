@@ -1,4 +1,4 @@
-#include "PhysicsEngine/PhysicsSystem.h"
+#include "PhysicsEngine/PhysicsContext.h"
 #include "PhysicsEngine/RigidbodyVolume.h"
 #include "PhysicsEngine/PhysicsApi.h"
 #include "Core/Geometry3D.h"
@@ -8,7 +8,7 @@
 
 #include <iostream>
 
-PhysicsSystem::PhysicsSystem(Physics* _physics)
+PhysicsContext::PhysicsContext(Physics* _physics)
 {
 	physics = _physics;
 	
@@ -22,12 +22,12 @@ PhysicsSystem::PhysicsSystem(Physics* _physics)
 	collisions.reserve(100);
 }
 
-PhysicsSystem::~PhysicsSystem()
+PhysicsContext::~PhysicsContext()
 {
 	ClearRigidbodies();
 }
 
-void PhysicsSystem::Update(float frameTime)
+void PhysicsContext::Update(float frameTime)
 {
 	colliders1.clear();
 	colliders2.clear();
@@ -66,7 +66,7 @@ void PhysicsSystem::Update(float frameTime)
 	GenerateCollisionEvents();
 }
 
-void PhysicsSystem::DetectCollisions()
+void PhysicsContext::DetectCollisions()
 {
 	for (int i = 0; i < bodies.size(); ++i)
 	{
@@ -112,7 +112,7 @@ void PhysicsSystem::DetectCollisions()
 	}
 }
 
-void PhysicsSystem::SolveImpulses(float frameTime)
+void PhysicsContext::SolveImpulses(float frameTime)
 {
 	for (int i = 0; i < collisions.size(); ++i)
 	{
@@ -130,7 +130,7 @@ void PhysicsSystem::SolveImpulses(float frameTime)
 	}
 }
 
-void PhysicsSystem::CorrectPositions()
+void PhysicsContext::CorrectPositions()
 {
 	for (int i = 0; i < collisions.size(); ++i)
 	{
@@ -165,7 +165,7 @@ void PhysicsSystem::CorrectPositions()
 	}
 }
 
-void PhysicsSystem::GenerateCollisionEvents()
+void PhysicsContext::GenerateCollisionEvents()
 {
 	for (auto& [key, data] : currentCollisions)
 	{
@@ -186,22 +186,22 @@ void PhysicsSystem::GenerateCollisionEvents()
 	}
 }
 
-void PhysicsSystem::AddRigidbody(Rigidbody* body)
+void PhysicsContext::AddRigidbody(Rigidbody* body)
 {
 	bodies.push_back(body);
 }
 
-void PhysicsSystem::RemoveRigidbody(Rigidbody* body)
+void PhysicsContext::RemoveRigidbody(Rigidbody* body)
 {
 	bodies.erase(std::remove(bodies.begin(), bodies.end(), body), bodies.end());
 }
 
-void PhysicsSystem::ClearRigidbodies()
+void PhysicsContext::ClearRigidbodies()
 {
 	bodies.clear();
 }
 
-void PhysicsSystem::ApplyImpulses(RigidbodyVolume* body1, RigidbodyVolume* body2, const CollisionData& hitData, 
+void PhysicsContext::ApplyImpulses(RigidbodyVolume* body1, RigidbodyVolume* body2, const CollisionData& hitData, 
 	int contanctIndex, float frameTime)
 {
 	float invMass1 = body1->GetInvMass();
@@ -295,11 +295,11 @@ void PhysicsSystem::ApplyImpulses(RigidbodyVolume* body1, RigidbodyVolume* body2
 	}
 }
 
-void PhysicsSystem::NotifyCollisionEnter(const CollisionKey& key, const CollisionData& data)
+void PhysicsContext::NotifyCollisionEnter(const CollisionKey& key, const CollisionData& data)
 {
 	if(!physics) 
 	{
-		std::cout << "PhysicsSytem: physics is null." << std::endl;
+		std::cout << "PhysicsContext: physics is null." << std::endl;
 		return;
 	}
 
@@ -308,7 +308,7 @@ void PhysicsSystem::NotifyCollisionEnter(const CollisionKey& key, const Collisio
 
 	if (!A || !B)
 	{
-		std::cout << "PhysicsSytem: invalid Rigidbody." << std::endl;
+		std::cout << "PhysicsContext: invalid Rigidbody." << std::endl;
 		return;
 	}
 
@@ -316,11 +316,11 @@ void PhysicsSystem::NotifyCollisionEnter(const CollisionKey& key, const Collisio
 	B->NotifyCollisionEnter(key.B, key.A, data);
 }
 
-void PhysicsSystem::NotifyCollisionStay(const CollisionKey& key, const CollisionData& data)
+void PhysicsContext::NotifyCollisionStay(const CollisionKey& key, const CollisionData& data)
 {
 	if(!physics) 
 	{
-		std::cout << "PhysicsSytem: physics is null." << std::endl;
+		std::cout << "PhysicsContext: physics is null." << std::endl;
 		return;
 	}
 
@@ -329,7 +329,7 @@ void PhysicsSystem::NotifyCollisionStay(const CollisionKey& key, const Collision
 
 	if (!A || !B)
 	{
-		std::cout << "PhysicsSytem: invalid Rigidbody." << std::endl;
+		std::cout << "PhysicsContext: invalid Rigidbody." << std::endl;
 		return;
 	}
 
@@ -337,11 +337,11 @@ void PhysicsSystem::NotifyCollisionStay(const CollisionKey& key, const Collision
 	B->NotifyCollisionStay(key.B, key.A, data);
 }
 
-void PhysicsSystem::NotifyCollisionExit(const CollisionKey& key)
+void PhysicsContext::NotifyCollisionExit(const CollisionKey& key)
 {
 	if(!physics) 
 	{
-		std::cout << "PhysicsSytem: physics is null." << std::endl;
+		std::cout << "PhysicsContext: physics is null." << std::endl;
 		return;
 	}
 
@@ -350,7 +350,7 @@ void PhysicsSystem::NotifyCollisionExit(const CollisionKey& key)
 
 	if (!A || !B)
 	{
-		std::cout << "PhysicsSytem: invalid Rigidbody." << std::endl;
+		std::cout << "PhysicsContext: invalid Rigidbody." << std::endl;
 		return;
 	}
 
