@@ -58,6 +58,8 @@ void MeshRenderer::SetTexture(uint32_t _textureID)
 
 void MeshRenderer::SetTextureTiling(const Vec2& _tiling)
 {
+	if(meshBuffer->GetShaderType() != S_TEXTURE) return;
+	
 	textureTiling = _tiling;
 }
 

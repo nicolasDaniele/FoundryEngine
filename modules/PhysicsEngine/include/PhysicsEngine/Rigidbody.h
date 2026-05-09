@@ -4,11 +4,7 @@
 #include "Core/Geometry3D.h"
 #include "PhysicsEngine/Collisions3D.h"
 #include "EngineInterfaces/IPhysics.h"
-
-#define RIGIDBODY_TYPE_BASE		0
-#define RIGIDBODY_TYPE_PARTICLE		1
-#define RIGIDBODY_TYPE_SPHERE		2
-#define RIGIDBODY_TYPE_BOX		3
+#include "EngineInterfaces/PhysicsTypes.h"
 
 class ICollisionListener;
 
@@ -18,10 +14,10 @@ using OBB = CoreGeometry::OBB;
 class Rigidbody
 {
 public:
-	int type;
+	BodyType bodyType;
 	std::vector<ICollisionListener*> colliders;
 	
-	inline Rigidbody() { type = RIGIDBODY_TYPE_BASE; }
+	inline Rigidbody() { bodyType = BodyType::B_BASE; }
 	virtual ~Rigidbody() = default;
 	
 	Rigidbody(const Rigidbody&) = delete;
@@ -32,8 +28,8 @@ public:
 	
 	inline bool HasVolume() 
 	{
-		return type == RIGIDBODY_TYPE_SPHERE
-		|| type == RIGIDBODY_TYPE_BOX;
+		return bodyType == BodyType::B_BOX
+		|| bodyType == BodyType::B_SPHERE;
 	}
 	
 	virtual void Update(float frameTime) { }

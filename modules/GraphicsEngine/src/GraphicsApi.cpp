@@ -171,7 +171,7 @@ void Graphics::UpdateMeshRendererPosition(MeshRendererHandle meshHandle, Vec3 ne
     MRSlots[meshHandle.index].renderer->SetPosition(newPosition);
 }
 
-int Graphics::LoadTextureToMeshRenderer(const char *textureFileName, MeshRendererHandle meshHandle)
+int Graphics::LoadTextureToMeshRenderer(const char *textureFilePath, MeshRendererHandle meshHandle)
 {
 	if (!IsValidMeshRenderer(meshHandle))
 	{
@@ -180,10 +180,10 @@ int Graphics::LoadTextureToMeshRenderer(const char *textureFileName, MeshRendere
 	}
 	
 	TextureLoader textureLoader;
-	int textureID = textureLoader.LoadTexture(textureFileName);
+	int textureID = textureLoader.LoadTexture(textureFilePath);
 	if (textureID == -1)
 	{
-		std::cout << "[GraphicsEngine] Failed to load texture: " << textureFileName << std::endl;
+		std::cout << "[GraphicsEngine] Failed to load texture: " << textureFilePath << std::endl;
 		return -1;
 	}
 

@@ -13,13 +13,9 @@ using OBB = CoreGeometry::OBB;
 class RigidbodyVolume : public Rigidbody
 {
 public:
-	// @TODO: Pass in damping as parameter in constructor
-	RigidbodyVolume(int _bodyType, const Vec3& _position,
-		float _mass = 1.0f, float _friction = 0.6f,
-		float _restitution = 0.5f);
-	
-
-	~RigidbodyVolume() { }
+	RigidbodyVolume(BodyType _bodyType, const Vec3& _position,
+		float _mass = 1.0f, float _friction = 0.6f,	float _restitution = 0.5f);
+	~RigidbodyVolume() = default;
 
 	RigidbodyVolume(const RigidbodyVolume&) = delete;
 	RigidbodyVolume& operator=(const RigidbodyVolume&) = delete;

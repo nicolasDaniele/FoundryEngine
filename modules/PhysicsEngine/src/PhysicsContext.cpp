@@ -1,12 +1,11 @@
-#include "PhysicsEngine/PhysicsContext.h"
-#include "PhysicsEngine/RigidbodyVolume.h"
-#include "PhysicsEngine/PhysicsApi.h"
+#include <iostream>
 #include "Core/Geometry3D.h"
 #include "Core/MathDefinitions.h"
 #include "Core/Matrices.h"
 #include "EngineInterfaces/PhysicsInterfaces.h"
-
-#include <iostream>
+#include "PhysicsEngine/PhysicsContext.h"
+#include "PhysicsEngine/RigidbodyVolume.h"
+#include "PhysicsEngine/PhysicsApi.h"
 
 PhysicsContext::PhysicsContext(Physics* _physics)
 {
@@ -84,19 +83,23 @@ void PhysicsContext::DetectCollisions()
 				RigidbodyVolume* rb1 = (RigidbodyVolume*)bodies[i];
 				RigidbodyVolume* rb2 = (RigidbodyVolume*)bodies[j];
 
-				if (rb1->type == RIGIDBODY_TYPE_BOX && rb2->type == RIGIDBODY_TYPE_BOX)
+				if (rb1->bodyType == BodyType::B_BOX && rb2->bodyType == BodyType::B_BOX)
+				{
 					collision = FindCollisionFeatures(rb1->GetBox(), rb2->GetBox());
-				else if (rb1->type == RIGIDBODY_TYPE_BOX && rb2->type == RIGIDBODY_TYPE_SPHERE)
+				}
+				else if (rb1->bodyType == BodyType::B_BOX && rb2->bodyType == BodyType::B_SPHERE)
 				{
 					collision = FindCollisionFeatures(rb1->GetBox(), rb2->GetSphere());
 				}
-				else if (rb1->type == RIGIDBODY_TYPE_SPHERE && rb2->type == RIGIDBODY_TYPE_BOX)
+				else if (rb1->bodyType == BodyType::B_SPHERE && rb2->bodyType == BodyType::B_BOX)
 				{
 					collision = FindCollisionFeatures(rb2->GetBox(), rb1->GetSphere());
 					collision.normal = collision.normal * -1.0f;
 				}
-				else if (rb1->type == RIGIDBODY_TYPE_SPHERE && rb2->type == RIGIDBODY_TYPE_SPHERE)
+				else if (rb1->bodyType == BodyType::B_SPHERE && rb2->bodyType == BodyType::B_SPHERE)
+				{
 					collision = FindCollisionFeatures(rb1->GetSphere(), rb2->GetSphere());
+				}
 			}
 
 			if (collision.colliding)

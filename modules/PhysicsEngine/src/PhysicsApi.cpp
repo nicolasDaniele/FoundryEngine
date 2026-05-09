@@ -1,5 +1,4 @@
 #include <iostream>
-#include <cassert>
 #include "PhysicsEngine/PhysicsApi.h"
 #include "PhysicsEngine/PhysicsContext.h"
 #include "PhysicsEngine/RigidbodyVolume.h"
@@ -14,8 +13,8 @@ Physics::~Physics()
 	delete physicsContext;
 }
 
-RigidbodyHandle Physics::CreateRigidbody(int bodyType, const Vec3& position,
-		float mass, float friction,	float coefitientOfRestitution)
+RigidbodyHandle Physics::CreateRigidbody(BodyType bodyType, const Vec3& position,
+		float mass, float friction,	float restitution)
 {
     uint32_t index = 0;
 
@@ -28,7 +27,7 @@ RigidbodyHandle Physics::CreateRigidbody(int bodyType, const Vec3& position,
             RBSlots[i].generation++;
 
             RBSlots[i].rigidbody = std::make_unique<RigidbodyVolume>(
-                bodyType, position, mass, friction, coefitientOfRestitution
+                bodyType, position, mass, friction, restitution
             );
 
             break;
@@ -41,7 +40,7 @@ RigidbodyHandle Physics::CreateRigidbody(int bodyType, const Vec3& position,
 
         RBSlots.emplace_back(
             std::make_unique<RigidbodyVolume>(
-                bodyType, position, mass, friction, coefitientOfRestitution
+                bodyType, position, mass, friction, restitution
             ),
             0,
             true
@@ -77,7 +76,7 @@ void Physics::DestroyRigidbody(RigidbodyHandle rbHandle)
 void Physics::SetRigidbodyBoxHalfExtents(RigidbodyHandle rbHandle, const Vec3& halfExtents)
 {
 	auto* volume = GetVolume(rbHandle);
-	if (!volume || volume->type != 3) return;
+	if (!volume || volume->bodyType != BodyType::B_BOX) return;
 
 	volume->SetBoxHalfExtents(halfExtents);
 }
@@ -85,7 +84,7 @@ void Physics::SetRigidbodyBoxHalfExtents(RigidbodyHandle rbHandle, const Vec3& h
 void Physics::SetRigidbodyBoxCenter(RigidbodyHandle rbHandle, const Vec3& center)
 {
 	auto* volume = GetVolume(rbHandle);
-	if (!volume || volume->type != 3) return;
+	if (!volume || volume->bodyType != BodyType::B_BOX) return;
 
 	volume->SetBoxCenter(center);
 }
@@ -93,7 +92,7 @@ void Physics::SetRigidbodyBoxCenter(RigidbodyHandle rbHandle, const Vec3& center
 void Physics::SetRigidbodyBoxOrientation(RigidbodyHandle rbHandle, const Mat3& orientation)
 {
 	auto* volume = GetVolume(rbHandle);
-	if (!volume || volume->type != 3) return;
+	if (!volume || volume->bodyType != BodyType::B_BOX) return;
 
 	volume->SetBoxOrientation(orientation);
 }
@@ -101,7 +100,7 @@ void Physics::SetRigidbodyBoxOrientation(RigidbodyHandle rbHandle, const Mat3& o
 void Physics::SetRigidbodySphereRadius(RigidbodyHandle rbHandle, const float radius)
 {
 	auto* volume = GetVolume(rbHandle);
-	if (!volume || volume->type != 2) return;
+	if (!volume || volume->bodyType != BodyType::B_SPHERE) return;
 
 	volume->SetSphereRadius(radius);
 }
@@ -109,7 +108,7 @@ void Physics::SetRigidbodySphereRadius(RigidbodyHandle rbHandle, const float rad
 void Physics::SetRigidbodySphereCenter(RigidbodyHandle rbHandle, const Vec3& center)
 {
 	auto* volume = GetVolume(rbHandle);
-	if (!volume || volume->type != 2)
+	if (!volume || volume->bodyType != BodyType::B_SPHERE)
 	{
 		std::cout << "[PhysicsEngine] Invalid RigidbodyHandle." << std::endl;
 		return;
@@ -207,8 +206,8 @@ extern "C"
 		return new Physics();
 	}
 
-	PHYSICS_API void DestroyPhysicsEngine(IPhysics* physicsEngine)
+	PHYSICS_API void DestroyPhysicsEngine(IPhysics* physics)
 	{
-		delete physicsEngine;
+		delete physics;
 	}
 }

@@ -15,6 +15,8 @@ public:
 		physics->AddCollisionListenerToRigidbody(_body, this);
 	}
 
+	~PlayerObject() = default;
+
 	bool IsGrounded() const { return isGrounded; }
 	Vec3 GetPosition() const { return position; }
 

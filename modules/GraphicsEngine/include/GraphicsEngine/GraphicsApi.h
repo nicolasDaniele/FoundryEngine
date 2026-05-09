@@ -10,6 +10,11 @@ using Vec3 = CoreMath::Vec3;
 
 class Camera;
 
+/// Internal storage slot for MeshRenderers.
+///
+/// Uses a generation counter to invalidate stale handles.
+/// When a MeshRenderer is destroyed, the slot can be reused
+/// but its generation is incremented.
 struct MeshRendererSlot
 {
     std::unique_ptr<MeshRenderer> renderer;
@@ -41,23 +46,23 @@ public:
 	uint32_t CreateShaderProgram(const char* vertexShaderPath,
 		const char* fragmentShaderPath) override;
 	void DrawDebugLines(const Vec3* vertices, int vertexCount,
-		uint32_t shaderProgram, Vec3 color = Vec3(1.0f, 1.0f, 1.0f)) override;
+		uint32_t shaderProgram, Vec3 color = Vec3(1.0f)) override;
 
 	MeshRendererHandle CreateMeshRenderer(MeshType meshType, ShaderType shaderType,
-										Vec3 position = Vec3(0.0f, 0.0f, 0.0f),
-										Vec3 scale = Vec3(1.0f, 1.0f, 1.0f),
-										Vec3 color = Vec3(1.0f, 1.0f, 1.0f),
+										Vec3 position = Vec3(0.0f),
+										Vec3 scale = Vec3(1.0f),
+										Vec3 color = Vec3(1.0f),
 										const char* vertexShaderPath = "", 
 										const char* fragmentShaderPath = "") override;
 	
 	void DestroyMeshRenderer(MeshRendererHandle meshHandle);
 	void UpdateMeshRendererPosition(MeshRendererHandle meshHandle, Vec3 newPosition) override;
-	bool IsValidMeshRenderer(MeshRendererHandle meshHandle);
 	int LoadTextureToMeshRenderer(const char* textureFileName, MeshRendererHandle meshHandle) override;
 	void SetTextureTilingToMeshRenderer(MeshRendererHandle meshHandle, Vec2 tiling) override;
 	Vec3 GetMeshRendererPosition(MeshRendererHandle meshHandle) override;
 	Vec3 GetMeshRendererScale(MeshRendererHandle meshHandle) override;
-
+	bool IsValidMeshRenderer(MeshRendererHandle meshHandle) override;
+	
 	void RotateCamera(float xOffset, float yOffset) override;
 	void CameraOrbit(Vec3 target, float distance, float xOffset, float yOffset, float frameTime, float smoothSpeed) override;
 	void MoveCamera(Utils::Direction direction, float frameTime) override;

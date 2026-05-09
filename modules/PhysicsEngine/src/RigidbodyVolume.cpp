@@ -3,12 +3,12 @@
 #include "Core/Matrices.h"
 #include "Core/Vectors.h"
 #include "Core/MathDefinitions.h"
-#include "PhysicsEngine/RigidbodyVolume.h"
 #include "EngineInterfaces/PhysicsInterfaces.h"
+#include "PhysicsEngine/RigidbodyVolume.h"
 
-RigidbodyVolume::RigidbodyVolume(int _bodyType, const Vec3& _position, float _mass, float _friction, float _restitution)
+RigidbodyVolume::RigidbodyVolume(BodyType _bodyType, const Vec3& _position, float _mass, float _friction, float _restitution)
 {
-	type = _bodyType;
+	bodyType = _bodyType;
 	position = _position;
 	mass = _mass;
 	friction = _friction;
@@ -49,7 +49,7 @@ void RigidbodyVolume::ClearForces()
 
 void RigidbodyVolume::SynchCollisionVolumes()
 {
-	if (type == RIGIDBODY_TYPE_BOX)
+	if (bodyType == BodyType::B_BOX)
 	{
 		box.center = position;
 
@@ -59,7 +59,7 @@ void RigidbodyVolume::SynchCollisionVolumes()
 			RAD2DEG(orientation.z)
 		);
 	}
-	else if (type == RIGIDBODY_TYPE_SPHERE)
+	else if (bodyType == BodyType::B_SPHERE)
 		sphere.center = position;
 }
 
@@ -97,7 +97,7 @@ Mat3 RigidbodyVolume::GetInvTensor()
 	float iy = 0.0f;
 	float iz = 0.0f;
 
-	if (mass != 0 && type == RIGIDBODY_TYPE_SPHERE)
+	if (mass != 0 && bodyType == BodyType::B_SPHERE)
 	{
 		float r2 = sphere.radius * sphere.radius;
 		float fraction = (2.0f / 5.0f);
@@ -105,7 +105,7 @@ Mat3 RigidbodyVolume::GetInvTensor()
 		iy = r2 * mass * fraction;
 		iz = r2 * mass * fraction;
 	}
-	else if (mass != 0 && type == RIGIDBODY_TYPE_BOX)
+	else if (mass != 0 && bodyType == BodyType::B_BOX)
 	{
 		Vec3 size = box.halfExtents * 2.0f;
 		float fraction = (1.0f / 12.0f);

@@ -3,6 +3,8 @@
 struct RigidbodyHandle;
 struct CollisionData;
 
+/// Interface for receiving collision events.
+/// Implemented by gameplay objects.
 class ICollisionListener {
 public:
     virtual void OnCollisionEnter(RigidbodyHandle self, RigidbodyHandle other, const CollisionData&) = 0;

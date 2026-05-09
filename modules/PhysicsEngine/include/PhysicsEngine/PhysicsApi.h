@@ -8,6 +8,11 @@
 class PhysicsContext;
 class RigidbodyVolume;
 
+/// Internal storage slot for Rigidbodies.
+///
+/// Uses a generation counter to invalidate stale handles.
+/// When a Rigidbody is destroyed, the slot can be reused
+/// but its generation is incremented.
 struct RigidbodySlot
 {
 	std::unique_ptr<Rigidbody> rigidbody;
@@ -38,9 +43,8 @@ public:
     Physics(Physics&&) = default;
     Physics& operator=(Physics&&) = default;
 
-	RigidbodyHandle CreateRigidbody(int bodyType, const Vec3& position,
-		float mass = 1.0f, float friction = 0.6f,
-		float coefitientOfRestitution = 0.5f) override;
+	RigidbodyHandle CreateRigidbody(BodyType bodyType, const Vec3& position,
+		float mass = 1.0f, float friction = 0.6f, float restitution = 0.5f) override;
 	void DestroyRigidbody(RigidbodyHandle rbHandle);
 
 	void SetRigidbodyBoxHalfExtents(RigidbodyHandle rbHandle, const Vec3& halfExtents) override;
@@ -53,12 +57,13 @@ public:
 	void AddCollisionListenerToRigidbody(RigidbodyHandle rbHandle, ICollisionListener* listener) override;
 	void AddLinearImpulseToRigidbody(RigidbodyHandle rbHandle, const Vec3& impulse) override;
 	
+	bool IsValidRigidbodyHandle(RigidbodyHandle rbHandle) override;
+	
 	void Update(float frameTime) override;
 	
 	Rigidbody* GetRigidbodyFromHandle(RigidbodyHandle rbHandle);
 	
 private:
-	bool IsValidRigidbodyHandle(RigidbodyHandle rbHandle);
 	RigidbodyVolume* GetVolume(RigidbodyHandle rbHandle);
 	PhysicsContext* physicsContext = nullptr;
 	std::vector<RigidbodySlot> RBSlots;

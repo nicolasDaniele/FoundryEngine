@@ -104,7 +104,7 @@ int main()
 		Vec3(0.4f, 0.4f, 0.4f), // Color
 		FLAT_VS_PATH, FLAT_FS_PATH);
 	
-	RigidbodyHandle ballBody = physics->CreateRigidbody(2, ballPosition);
+	RigidbodyHandle ballBody = physics->CreateRigidbody(BodyType::B_SPHERE, ballPosition);
 	physics->SetRigidbodySphereRadius(ballBody, ballSize.y);
 	
 	player = new PlayerObject(ballBody, ballRenderer, physics, graphics);
@@ -266,7 +266,7 @@ void SetupFloorLayout()
 		floorGeomery.center = floorPosition;
 		floorGeomery.halfExtents = graphics->GetMeshRendererScale(floorRenderers[i]) * 0.5f;
 
-		floorVolumes.push_back(physics->CreateRigidbody(3, floorPosition, 0.0f));
+		floorVolumes.push_back(physics->CreateRigidbody(BodyType::B_BOX, floorPosition, 0.0f));
 		physics->SetRigidbodyBoxHalfExtents(floorVolumes[i], floorGeomery.halfExtents);
 		physics->SetRigidbodyBoxCenter(floorVolumes[i], floorGeomery.center);
 	}
