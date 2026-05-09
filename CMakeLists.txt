@@ -24,4 +24,4 @@ add_subdirectory(modules/PhysicsEngine)
 add_subdirectory(modules/Debugger)
 
 # App
-add_subdirectory(app/MainEngine)
+add_subdirectory(app/FoundryEngine)

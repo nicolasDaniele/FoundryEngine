@@ -54,10 +54,10 @@ int main()
 	glfwSetErrorCallback(&glfwError);
 	glfwInit();
 
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Main Engine", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Foundry Engine", NULL, NULL);
 	if (window == NULL)
 	{
-		std::cout << "[MainEngine] Failed to create GLFW window" << std::endl;
+		std::cout << "[App] Failed to create GLFW window" << std::endl;
 		glfwTerminate();
 		return -1;
 	}
@@ -78,7 +78,7 @@ int main()
 	graphics = GetGraphicsEngine(cameraParams, (GLADloadproc)glfwGetProcAddress);
 	if (!graphics)
 	{
-		std::cout << "[MainEngine] GraphicsEngine is null." << std::endl;
+		std::cout << "[App] GraphicsEngine is null." << std::endl;
 		std::cin.get();
 		return -1;
 	}
@@ -86,7 +86,7 @@ int main()
 	physics = GetPhysicsEngine();
 	if (!physics)
 	{
-		std::cout << "[MainEngine] PhysicsEngine is null." << std::endl;
+		std::cout << "[App] PhysicsEngine is null." << std::endl;
 		std::cin.get();
 		return -1;
 	}
@@ -110,7 +110,7 @@ int main()
 	player = new PlayerObject(ballBody, ballRenderer, physics, graphics);
 	if (!player)
 	{
-		std::cout << "[MainEngine] PlayerObject is null." << std::endl;
+		std::cout << "[App] PlayerObject is null." << std::endl;
 		std::cin.get();
 		return -1;
 	}
@@ -182,7 +182,7 @@ void OrbitCamera_Callback(GLFWwindow* window, double xPosIn, double yPosIn)
 {
 	if(graphics == nullptr)
 	{
-		std::cout << "[MainEngine] GraphicsEngine is NULL" << std::endl;
+		std::cout << "[App] GraphicsEngine is NULL" << std::endl;
 		return;
 	}
 
@@ -253,7 +253,7 @@ void SetupFloorLayout()
 		int textureId = graphics->LoadTextureToMeshRenderer(WOOD_TEXTURE_PATH, floorRenderers[i]);
 		if (textureId == -1)
 		{
-			std::cout << "[MainEngine] Texture could not be loaded for floofloorRenderer in index." << i << std::endl;
+			std::cout << "[App] Texture could not be loaded for floofloorRenderer in index." << i << std::endl;
 			std::cin.get();
 			return;
 		}
