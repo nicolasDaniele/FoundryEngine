@@ -75,19 +75,23 @@ FoundryEngine
 ### Handle-Based Object System
 The engine uses generation-safe handles instead of exposing raw pointers publicly.
 Example:
+```
 struct RigidbodyHandle
 {
     uint32_t index;
     uint32_t generation;
 };
+```
 This prevents:
 - dangling references
 - invalid object access
 - stale pointers after slot reuse
+
 Internally, objects are stored in slot arrays using smart pointers.
 
 ### Physics Pipeline
 The physics simulation currently follows this pipeline:
+```text
 Detect Collisions
         ↓
 Solve Collision Impulses
@@ -95,11 +99,13 @@ Solve Collision Impulses
 Correct Penetrations
         ↓
 Generate Collision Events
+```
 
 Collision events support:
 - Enter
 - Stay
 - Exit
+
 through listener callbacks.
 
 ### Rendering Pipeline
@@ -107,6 +113,7 @@ through listener callbacks.
 - flat colored and textured materials rendering
 - dynamic mesh translation
 - debug rendering
+
 Mesh data is uploaded through GPU mesh buffers and rendered using OpenGL draw calls.
 
 ---
@@ -179,6 +186,7 @@ Some systems are still work-in-progress, including:
 - friction/restitution response
 - rigidbody orientation
 - advanced collision stability
+
 The current demo focuses primarily on:
 - rendering architecture
 - collision detection
@@ -219,6 +227,7 @@ This project exists primarily as:
 - a rendering and physics sandbox
 - a portfolio project
 - a long-term experimental engine architecture playground
+
 The focus is understanding how game engine systems work internally rather than building production-ready tooling.
 
 ---
