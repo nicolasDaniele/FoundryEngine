@@ -131,6 +131,34 @@ Vec3 Physics::GetRigidbodyPosition(RigidbodyHandle rbHandle)
 	return rb->GetPosition();
 }
 
+void Physics::SetRigidbodyPosition(RigidbodyHandle rbHandle, const Vec3& position)
+{
+	if(!IsValidRigidbodyHandle(rbHandle))
+	{
+		std::cout << "[PhysicsEngine] Invalid RigidbodyHandle." << std::endl;
+		return;
+	} 
+
+	auto* rb = RBSlots[rbHandle.index].rigidbody.get();
+	if (!rb) return;
+
+	rb->SetPosition(position);
+}
+
+void Physics::SetRigidbodyLinearVelocity(RigidbodyHandle rbHandle, const Vec3& velocity)
+{
+	if(!IsValidRigidbodyHandle(rbHandle))
+	{
+		std::cout << "[PhysicsEngine] Invalid RigidbodyHandle." << std::endl;
+		return;
+	} 
+
+	auto* rb = RBSlots[rbHandle.index].rigidbody.get();
+	if (!rb) return;
+
+	rb->SetVelocity(velocity);
+}
+
 void Physics::AddCollisionListenerToRigidbody(RigidbodyHandle rbHandle, ICollisionListener* listener)
 {
 	if(!IsValidRigidbodyHandle(rbHandle) || !listener)

@@ -37,21 +37,30 @@ public:
 		graphics->UpdateMeshRendererPosition(renderer, position);
 	}
 
+	void Reset(const Vec3& spawnPosition)
+	{
+		position = spawnPosition;
+
+		physics->SetRigidbodyPosition(body, spawnPosition);
+		physics->SetRigidbodyLinearVelocity(body, Vec3(0.0f));
+
+		graphics->UpdateMeshRendererPosition(renderer, spawnPosition);
+
+		isGrounded = false;
+	}
+
 	void OnCollisionEnter(RigidbodyHandle self, RigidbodyHandle other, const CollisionData& data) override
 	{
 		isGrounded = true;
-		//std::cout << "Enter Collision" << std::endl;
 	}
 
 	void OnCollisionStay(RigidbodyHandle self, RigidbodyHandle other, const CollisionData& data) override
 	{
-		//std::cout << "Stay Collision" << std::endl;
 	}
 
 	void OnCollisionExit(RigidbodyHandle self, RigidbodyHandle other) override
 	{
 		isGrounded = false;
-		//std::cout << "Exit Collision" << std::endl;
 	}
 
 private:

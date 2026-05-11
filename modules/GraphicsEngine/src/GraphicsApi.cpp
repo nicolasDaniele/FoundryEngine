@@ -62,14 +62,14 @@ Graphics::~Graphics()
 		glDeleteVertexArrays(1, &debugVAO);
 }
 
-uint32_t Graphics::CreateShaderProgram(const char *vertexShaderPath, const char *fragmentShaderPath)
+uint32_t Graphics::CreateShaderProgram(const char* vertexShaderPath, const char* fragmentShaderPath)
 {
 	ShaderLoader shaderLoader;
 	return shaderLoader.CreateProgram(vertexShaderPath,
 									  fragmentShaderPath);
 }
 
-void Graphics::DrawDebugLines(const Vec3 *vertices, int vertexCount,
+void Graphics::DrawDebugLines(const Vec3* vertices, int vertexCount,
 							  uint32_t shaderProgram, Vec3 color)
 {
 	if (vertexCount <= 0)

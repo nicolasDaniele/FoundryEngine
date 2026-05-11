@@ -174,8 +174,9 @@ FoundryEngine.exe
 | A | Move Left |
 | S | Move Backward |
 | D | Move Right |
-| Right Shift | Jump |
+| Space Bar | Jump |
 | Left Mouse Button | Orbit Camera |
+| T | Toggle Draw Debug |
 | ESC | Exit Demo |
 
 ---

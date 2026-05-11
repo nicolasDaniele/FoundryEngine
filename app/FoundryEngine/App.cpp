@@ -1,8 +1,11 @@
 #include <glad/glad.h>
 #include <glfw/glfw3.h>
 #include <iostream>
+#include <random>
+#include <ctime>
 #include "Core/Geometry3D.h"
 #include "Core/Vectors.h"
+#include "Debugger/DebugRenderer.h"
 #include "EngineInterfaces/IGraphics.h"
 #include "EngineInterfaces/IPhysics.h"
 #include "EngineInterfaces/GraphicsPublicData.h"
@@ -30,8 +33,8 @@ float mouseYOffset = 0.0f;
 float frameTime = 0.0f;
 float lastFrame = 0.0f;
 
-std::vector<MeshRendererHandle> floorRenderers;
-std::vector<RigidbodyHandle> floorVolumes;
+std::vector<MeshRendererHandle> boxRenderers;
+std::vector<RigidbodyHandle> boxVolumes;
 
 IGraphics* graphics = nullptr;
 IPhysics* physics = nullptr;
@@ -40,9 +43,13 @@ float playerSpeed = 10.0f;
 float playerJumpImpulse = 2500.0f;
 PlayerObject* player = nullptr;
 
+bool drawDebug = false;
+bool tWasPressed = false;
+
 void HandleInput(GLFWwindow* window, float frameTime);
 void OrbitCamera_Callback(GLFWwindow* window, double xposIn, double yposIn);
 void SetupFloorLayout();
+float GetRandomColor();
 
 static void glfwError(int id, const char* description)
 {
@@ -91,20 +98,22 @@ int main()
 		return -1;
 	}
 
+	Debugger::DebugRenderer* debugRenderer = new Debugger::DebugRenderer(graphics);
+
 	// ------------------ End Engines Initialization ------------------ \\
 
 
 	// ------------------------ Player Setup ------------------------ \\
 
-	Vec3 ballPosition = Vec3(0.0f, 15.0f, 30.0f);
+	Vec3 ballStartPosition = Vec3(0.0f, 20.0f, 30.0f);
 	Vec3 ballSize = Vec3(0.5f, 0.5f, 0.5f);
 
 	MeshRendererHandle ballRenderer = graphics->CreateMeshRenderer(MeshType::M_SPHERE, ShaderType::S_COLOR,
-		ballPosition, ballSize,
+		ballStartPosition, ballSize,
 		Vec3(0.4f, 0.4f, 0.4f), // Color
 		FLAT_VS_PATH, FLAT_FS_PATH);
 	
-	RigidbodyHandle ballBody = physics->CreateRigidbody(BodyType::B_SPHERE, ballPosition);
+	RigidbodyHandle ballBody = physics->CreateRigidbody(BodyType::B_SPHERE, ballStartPosition);
 	physics->SetRigidbodySphereRadius(ballBody, ballSize.y);
 	
 	player = new PlayerObject(ballBody, ballRenderer, physics, graphics);
@@ -131,7 +140,10 @@ int main()
 
 		physics->Update(frameTime);		
 		player->Update(frameTime);
-		
+
+		if(player->GetPosition().y < -10.0f)
+			player->Reset(ballStartPosition);
+
 		// Camera Movement
 		graphics->CameraFollow(player->GetPosition(), 10.0f, frameTime, 6.0f);
 
@@ -141,12 +153,35 @@ int main()
 		mouseXOffset = 0.0f;
 		mouseYOffset = 0.0f;
 		
-		
+
+		// Graphics Rendering
 		graphics->Render();
+		
+
+		// Debug Rendering
+		if(drawDebug)
+		{
+			debugRenderer->Clear();	
+	
+			debugRenderer->AddSphere({ player->GetPosition(), ballSize.x });
+			for(int i = 0; i < boxRenderers.size(); i++)
+			{
+				CoreGeometry::OBB obb;
+				debugRenderer->AddBox({ 
+					graphics->GetMeshRendererPosition(boxRenderers[i]), 
+					graphics->GetMeshRendererScale(boxRenderers[i]) * 0.5f
+				});
+			}
+	
+			debugRenderer->DrawDebug(Vec3(1.0f, 0.1f, 0.1f));
+		}
+		// End Debug Rendering
+		
 		glfwSwapBuffers(window);
 	}
 
 	delete player;
+	delete debugRenderer;
 
 	DestroyGraphicsEngine(graphics);
 	DestroyPhysicsEngine(physics);
@@ -157,8 +192,16 @@ int main()
 
 void HandleInput(GLFWwindow* window, float frameTime)
 {
+	// Close Window
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
+
+	// Toggle Draw Debug
+	bool tPressed = glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS;
+	if (tPressed && !tWasPressed)
+		drawDebug = !drawDebug;
+
+	tWasPressed = tPressed;
 
 	// Player Movement
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS && player != nullptr)
@@ -174,7 +217,7 @@ void HandleInput(GLFWwindow* window, float frameTime)
 		player->Move(Vec3(0.0f, 0.0f, playerSpeed) * frameTime);
 
 	// Player Jump
-	if (glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS && player != nullptr)
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && player != nullptr)
 		player->Jump(playerJumpImpulse * frameTime);
 }
 
@@ -205,69 +248,127 @@ void OrbitCamera_Callback(GLFWwindow* window, double xPosIn, double yPosIn)
 
 void SetupFloorLayout()
 {
-	// floorRenderer 0
-	floorRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+	// boxRenderer 0
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
 			Vec3(0.0f, 0.0f, 0.0f),		// Position
 			Vec3(6.0f, 0.2f, 80.0f),	// Size
-			Vec3(0.7f),					// Color
+			Vec3(GetRandomColor()),		// Color
 			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
 
-	// floorRenderer 1
-	floorRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+	// boxRenderer 1
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
 			Vec3(0.0f, -2.0f, -65.0f),	// Position
 			Vec3(6.0f, 0.2f, 50.0f),	// Size
-			Vec3(0.8f),					// Color
+			Vec3(GetRandomColor()),		// Color
 			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
 	
-	// floorRenderer 2
-	floorRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
-			Vec3(0.0f, 0.0f, -100.0f),	// Position
-			Vec3(3.0f, 0.2f, 20.0f),	// Size
-			Vec3(0.75f),				// Color
+	// boxRenderer 2
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+			Vec3(0.0f, 0.0f, -105.0f),	// Position
+			Vec3(2.0f, 0.2f, 20.0f),	// Size
+			Vec3(GetRandomColor()),		// Color
 			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
 
-	// floorRenderer 3
-	floorRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
-			Vec3(4.0f, 1.0f, -115.0f),	// Position
-			Vec3(3.0f, 0.2f, 5.0f),		// Size
+	// boxRenderer 3
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+			Vec3(0.0f, 2.0f, -130.0f),	// Position
+			Vec3(2.0f, 0.2f, 20.0f),	// Size
+			Vec3(GetRandomColor()),		// Color
+			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+
+	// boxRenderer 4
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+			Vec3(0.0f, 4.0f, -155.0f),	// Position
+			Vec3(2.0f, 0.2f, 20.0f),	// Size
+			Vec3(GetRandomColor()),		// Color
+			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+
+	// boxRenderer 5
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+			Vec3(5.0f, 5.0f, -175.0f),	// Position
+			Vec3(4.0f, 0.2f, 10.0f),	// Size
+			Vec3(GetRandomColor()),		// Color
+			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+
+	// boxRenderer 6
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+			Vec3(0.0f, 5.0f, -192.0f),	// Position
+			Vec3(4.0f, 0.2f, 10.0f),	// Size
+			Vec3(GetRandomColor()),		// Color
+			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+
+	// boxRenderer 7
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+			Vec3(-5.0f, 5.0f, -214.0f),	// Position
+			Vec3(4.0f, 0.2f, 10.0f),	// Size
+			Vec3(GetRandomColor()),		// Color
+			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+
+	// boxRenderer 8
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+			Vec3(0.0f, 5.0f, -255.0f),	// Position
+			Vec3(6.0f, 0.2f, 50.0f),	// Size
+			Vec3(GetRandomColor()),		// Color
+			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+
+	// GOAL
+	// boxRenderer 9
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+			Vec3(0.0f, 5.0f, -290.0f),	// Position
+			Vec3(30.0f, 0.2f, 20.0f),	// Size
+			Vec3(1.0f),					// Color
+			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+	
+	// boxRenderer 10 (back wall)
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+			Vec3(0.0f, 8.0f, -300.0f),	// Position
+			Vec3(30.0f, 6.0f, 0.2f),	// Size
 			Vec3(1.0f),					// Color
 			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
 
-	// floorRenderer 4
-	floorRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
-			Vec3(0.0f, 2.0f, -125.0f),	// Position
-			Vec3(3.0f, 0.2f, 5.0f),		// Size
-			Vec3(0.9f),					// Color
+	// boxRenderer 11 (left wall)
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+			Vec3(-15.0f, 8.0f, -290.0f),// Position
+			Vec3(0.2f, 6.0f, 20.0f),	// Size
+			Vec3(1.0f),					// Color
 			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
 
-	// floorRenderer 5
-	floorRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
-			Vec3(-4.0f, 3.0f, -135.0f),	// Position
-			Vec3(3.0f, 0.2f, 5.0f),		// Size
-			Vec3(0.85f),				// Color
+	// boxRenderer 12 (right wall)
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+			Vec3(15.0f, 8.0f, -290.0f),	// Position
+			Vec3(0.2f, 6.0f, 20.0f),	// Size
+			Vec3(1.0f),					// Color
 			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
 	
-	
-	for(int i = 0; i < floorRenderers.size(); i++)
+	for(int i = 0; i < boxRenderers.size(); i++)
 	{
-		int textureId = graphics->LoadTextureToMeshRenderer(WOOD_TEXTURE_PATH, floorRenderers[i]);
+		int textureId = graphics->LoadTextureToMeshRenderer(WOOD_TEXTURE_PATH, boxRenderers[i]);
 		if (textureId == -1)
 		{
-			std::cout << "[App] Texture could not be loaded for floofloorRenderer in index." << i << std::endl;
+			std::cout << "[App] Texture could not be loaded for boxRenderer in index." << i << std::endl;
 			std::cin.get();
 			return;
 		}
 
-		float yTiling = graphics->GetMeshRendererScale(floorRenderers[i]).z / 2.0f;
-		graphics->SetTextureTilingToMeshRenderer(floorRenderers[i], Vec2(1.0f, yTiling));
+		float yTiling = graphics->GetMeshRendererScale(boxRenderers[i]).z / 2.0f;
+		graphics->SetTextureTilingToMeshRenderer(boxRenderers[i], Vec2(1.0f, yTiling));
 
-		Vec3 floorPosition = graphics->GetMeshRendererPosition(floorRenderers[i]);
-		CoreGeometry::OBB floorGeomery;
-		floorGeomery.center = floorPosition;
-		floorGeomery.halfExtents = graphics->GetMeshRendererScale(floorRenderers[i]) * 0.5f;
+		Vec3 boxPosition = graphics->GetMeshRendererPosition(boxRenderers[i]);
+		CoreGeometry::OBB boxGeomery;
+		boxGeomery.center = boxPosition;
+		boxGeomery.halfExtents = graphics->GetMeshRendererScale(boxRenderers[i]) * 0.5f;
 
-		floorVolumes.push_back(physics->CreateRigidbody(BodyType::B_BOX, floorPosition, 0.0f));
-		physics->SetRigidbodyBoxHalfExtents(floorVolumes[i], floorGeomery.halfExtents);
-		physics->SetRigidbodyBoxCenter(floorVolumes[i], floorGeomery.center);
+		boxVolumes.push_back(physics->CreateRigidbody(BodyType::B_BOX, boxPosition, 0.0f));
+		physics->SetRigidbodyBoxHalfExtents(boxVolumes[i], boxGeomery.halfExtents);
+		physics->SetRigidbodyBoxCenter(boxVolumes[i], boxGeomery.center);
 	}
+}
+
+float GetRandomColor()
+{
+    static std::mt19937 gen(static_cast<unsigned int>(std::time(0)));  
+    
+	std::uniform_real_distribution<float> dis(0.5f, 1.0f);
+    
+	return dis(gen);
 }

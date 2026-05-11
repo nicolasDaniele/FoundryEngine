@@ -52,25 +52,31 @@ public:
     virtual RigidbodyHandle CreateRigidbody(BodyType bodyType, const Vec3& position,
 		float mass = 1.0f, float friction = 0.6f, float restitution = 0.5f) = 0;
 
-	/// Sets the half extents of a Rigidbody's Box.
+	/// Sets the half extents of a Rigidbody's Box collider.
 	/// If the handle is invalid or the Rigidbody's type is not a Box, the call is ignored.
 	virtual void SetRigidbodyBoxHalfExtents(RigidbodyHandle rbHandle, const Vec3& halfExtents) = 0;
-	/// Sets the center of a Rigidbody's Box.
+	/// Sets the center of a Rigidbody's Box collider.
 	/// If the handle is invalid or the Rigidbody's type is not a Box, the call is ignored.
 	virtual void SetRigidbodyBoxCenter(RigidbodyHandle rbHandle, const Vec3& center) = 0;
-	/// Sets the orientation of a Rigidbody's Box.
+	/// Sets the orientation of a Rigidbody's Box collider.
 	/// If the handle is invalid or the Rigidbody's type is not a Box, the call is ignored.
 	virtual void SetRigidbodyBoxOrientation(RigidbodyHandle rbHandle, const Mat3& orientation) = 0;
-	/// Sets the radius of a Rigidbody's Sphere.
+	/// Sets the radius of a Rigidbody's Sphere collider.
 	/// If the handle is invalid or the Rigidbody's type is not a Sphere, the call is ignored.
 	virtual void SetRigidbodySphereRadius(RigidbodyHandle rbHandle, const float radius) = 0;
-	/// Sets the center of a Rigidbody's Sphere.
+	/// Sets the center of a Rigidbody's Sphere collider.
 	/// If the handle is invalid or the Rigidbody's type is not a Sphere, the call is ignored.
 	virtual void SetRigidbodySphereCenter(RigidbodyHandle rbHandle, const Vec3& center) = 0;
 	
 	/// Returns the current position of a Rigidbody.
 	/// If the handle is invalid, returns Vec3(0.0f).
 	virtual Vec3 GetRigidbodyPosition(RigidbodyHandle rbHandle) = 0;
+	/// Set the position of a Rigidbody.
+	/// If the handle is invalid, the call is ignored. 
+	virtual void SetRigidbodyPosition(RigidbodyHandle rbHandle, const Vec3& position) = 0;
+	/// Set the linear velocity of a Rigidbody.
+	/// If the handle is invalid, the call is ignored.
+	virtual void SetRigidbodyLinearVelocity(RigidbodyHandle rbHandle, const Vec3& velocity) = 0;
 	
 	/// Adds a collision listener to the given RigidbodyHandle.
 	///

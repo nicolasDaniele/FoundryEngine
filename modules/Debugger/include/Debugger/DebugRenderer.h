@@ -21,6 +21,7 @@ namespace Debugger
 	{
 	public:
 		DebugRenderer(IGraphics* _graphics);
+		~DebugRenderer() = default;
 
 		void AddLine(Vec3 lineStart, Vec3 lineEnd);
 		void AddBox(const OBB& box);

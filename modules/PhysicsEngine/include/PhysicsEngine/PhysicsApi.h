@@ -52,7 +52,10 @@ public:
 	void SetRigidbodyBoxOrientation(RigidbodyHandle rbHandle, const Mat3& orientation) override;
 	void SetRigidbodySphereRadius(RigidbodyHandle rbHandle, const float radius) override;
 	void SetRigidbodySphereCenter(RigidbodyHandle rbHandle, const Vec3& center) override;
+
 	Vec3 GetRigidbodyPosition(RigidbodyHandle rbHandle) override;
+	void SetRigidbodyPosition(RigidbodyHandle rbHandle, const Vec3& position) override;
+	void SetRigidbodyLinearVelocity(RigidbodyHandle rbHandle, const Vec3& velocity) override;
 
 	void AddCollisionListenerToRigidbody(RigidbodyHandle rbHandle, ICollisionListener* listener) override;
 	void AddLinearImpulseToRigidbody(RigidbodyHandle rbHandle, const Vec3& impulse) override;
