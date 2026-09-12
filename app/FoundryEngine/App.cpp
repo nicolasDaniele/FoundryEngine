@@ -40,6 +40,13 @@ float lastFrame = 0.0f;
 std::vector<MeshRendererHandle> boxRenderers;
 std::vector<RigidbodyHandle> boxVolumes;
 
+// Point lights created in SetupSceneLighting are remembered here so their
+// positions/colors can be visualized as debug gizmos (see the debug
+// rendering block in main()). Directional lights have no meaningful
+// position, so they're not tracked here.
+std::vector<LightParams> pointLightGizmos;
+const float LIGHT_GIZMO_RADIUS = 0.3f;
+
 IGraphics* graphics = nullptr;
 IPhysics* physics = nullptr;
 
@@ -189,6 +196,11 @@ int main()
 					graphics->GetMeshRendererScale(boxRenderers[i]) * 0.5f
 				});
 			}
+
+			// Point light gizmos: a small wireframe sphere per light, tinted
+			// with the light's own emission color.
+			for (const LightParams& light : pointLightGizmos)
+				debugRenderer->AddColoredSphere({ light.position, LIGHT_GIZMO_RADIUS }, light.color);
 	
 			debugRenderer->DrawDebug(Vec3(1.0f, 0.1f, 0.1f));
 		}
@@ -265,21 +277,70 @@ void OrbitCamera_Callback(GLFWwindow* window, double xPosIn, double yPosIn)
 
 void SetupSceneLighting()
 {
-	// Sun-like directional light.
-	LightParams sunLight;
-	sunLight.type = L_DIRECTIONAL;
-	sunLight.direction = Vec3(-0.3f, -1.0f, -0.2f);
-	sunLight.color = Vec3(1.0f, 0.95f, 0.9f);
-	sunLight.intensity = 1.0f;
-	graphics->CreateLight(sunLight);
+	// Creates the light in the engine and also remembers its LightParams in
+	// pointLightGizmos, so the debug renderer can later draw a wireframe
+	// sphere at its position, tinted with its own color.
+	auto addPointLight = [](LightParams params)
+	{
+		graphics->CreateLight(params);
+		pointLightGizmos.push_back(params);
+	};
 
-	// Cool-toned point light used as a fill light over the play area.
-	LightParams fillLight;
-	fillLight.type = L_POINT;
-	fillLight.position = Vec3(0.0f, 15.0f, 20.0f);
-	fillLight.color = Vec3(0.6f, 0.7f, 1.0f);
-	fillLight.intensity = 0.6f;
-	graphics->CreateLight(fillLight);
+	LightParams fillLight_L1;
+	fillLight_L1.type = L_POINT;
+	fillLight_L1.position = Vec3(-4.0f, 6.0f, 30.0f);
+	fillLight_L1.color = Vec3(0.5f, 0.7f, 0.2f);
+	fillLight_L1.intensity = 0.8f;
+	addPointLight(fillLight_L1);
+
+	LightParams fillLight_R1;
+	fillLight_R1.type = L_POINT;
+	fillLight_R1.position = Vec3(4.0f, 6.0f, 10.0f);
+	fillLight_R1.color = Vec3(0.7f, 0.5f, 0.2f);
+	fillLight_R1.intensity = 0.8f;
+	addPointLight(fillLight_R1);
+
+	LightParams fillLight_L2;
+	fillLight_L2.type = L_POINT;
+	fillLight_L2.position = Vec3(-4.0f, 6.0f, -10.0f);
+	fillLight_L2.color = Vec3(0.5f, 0.7f, 0.2f);
+	fillLight_L2.intensity = 0.8f;
+	addPointLight(fillLight_L2);
+
+	LightParams fillLight_R2;
+	fillLight_R2.type = L_POINT;
+	fillLight_R2.position = Vec3(4.0f, 6.0f, -30.0f);
+	fillLight_R2.color = Vec3(0.7f, 0.5f, 0.2f);
+	fillLight_R2.intensity = 0.8f;
+	addPointLight(fillLight_R2);
+
+	LightParams fillLight_L3;
+	fillLight_L3.type = L_POINT;
+	fillLight_L3.position = Vec3(-4.0f, 6.0f, -50.0f);
+	fillLight_L3.color = Vec3(0.5f, 0.7f, 0.2f);
+	fillLight_L3.intensity = 0.8f;
+	addPointLight(fillLight_L3);
+
+	LightParams fillLight_R3;
+	fillLight_R3.type = L_POINT;
+	fillLight_R3.position = Vec3(4.0f, 6.0f, -70.0f);
+	fillLight_R3.color = Vec3(0.7f, 0.5f, 0.2f);
+	fillLight_R3.intensity = 0.8f;
+	addPointLight(fillLight_R3);
+
+	LightParams fillLight_L4;
+	fillLight_L4.type = L_POINT;
+	fillLight_L4.position = Vec3(-4.0f, 6.0f, -90.0f);
+	fillLight_L4.color = Vec3(0.5f, 0.7f, 0.2f);
+	fillLight_L4.intensity = 0.8f;
+	addPointLight(fillLight_L4);
+
+	LightParams fillLight_R4;
+	fillLight_R4.type = L_POINT;
+	fillLight_R4.position = Vec3(4.0f, 6.0f, -110.0f);
+	fillLight_R4.color = Vec3(0.7f, 0.5f, 0.2f);
+	fillLight_R4.intensity = 0.8f;
+	addPointLight(fillLight_R4);
 }
 
 void SetupFloorLayout()

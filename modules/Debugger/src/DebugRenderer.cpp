@@ -13,23 +13,21 @@ namespace Debugger
              "Assets/Shaders/DebugColor.fs");
     }
 
-    void DebugRenderer::AddLine(Vec3 lineStart, Vec3 lineEnd)
+    void DebugRenderer::AddLineToBatch(std::vector<Vec3>& batch, Vec3 lineStart, Vec3 lineEnd)
     {
-        vertices.push_back(lineStart);
-        vertices.push_back(lineEnd);
+        batch.push_back(lineStart);
+        batch.push_back(lineEnd);
     }
 
-    void DebugRenderer::AddBox(const OBB& box)
+    void DebugRenderer::AddBoxToBatch(std::vector<Vec3>& batch, const OBB& box)
     {
         std::vector<CoreGeometry::Line> edges = CoreGeometry::GetEdges(box);
 
-        for(CoreGeometry::Line edge : edges)
-        {
-            AddLine(edge.start, edge.end);
-        }
+        for (CoreGeometry::Line edge : edges)
+            AddLineToBatch(batch, edge.start, edge.end);
     }
 
-    void DebugRenderer::AddSphere(const Sphere& sphere)
+    void DebugRenderer::AddSphereToBatch(std::vector<Vec3>& batch, const Sphere& sphere)
     {
         for (int axis = 0; axis < 3; axis++)
         {
@@ -41,9 +39,51 @@ namespace Debugger
                 Vec3 p0 = CirclePoint(sphere.center, a0, sphere.radius, axis);
                 Vec3 p1 = CirclePoint(sphere.center, a1, sphere.radius, axis);
 
-                AddLine(p0, p1);
+                AddLineToBatch(batch, p0, p1);
             }
         }
+    }
+
+    std::vector<Vec3>& DebugRenderer::GetOrCreateColorBatch(const Vec3& color)
+    {
+        for (ColoredLineBatch& batch : coloredBatches)
+        {
+            if (batch.color.x == color.x && batch.color.y == color.y && batch.color.z == color.z)
+                return batch.vertices;
+        }
+
+        coloredBatches.push_back({ color, {} });
+        return coloredBatches.back().vertices;
+    }
+
+    void DebugRenderer::AddLine(Vec3 lineStart, Vec3 lineEnd)
+    {
+        AddLineToBatch(vertices, lineStart, lineEnd);
+    }
+
+    void DebugRenderer::AddBox(const OBB& box)
+    {
+        AddBoxToBatch(vertices, box);
+    }
+
+    void DebugRenderer::AddSphere(const Sphere& sphere)
+    {
+        AddSphereToBatch(vertices, sphere);
+    }
+
+    void DebugRenderer::AddColoredLine(Vec3 lineStart, Vec3 lineEnd, const Vec3& color)
+    {
+        AddLineToBatch(GetOrCreateColorBatch(color), lineStart, lineEnd);
+    }
+
+    void DebugRenderer::AddColoredBox(const OBB& box, const Vec3& color)
+    {
+        AddBoxToBatch(GetOrCreateColorBatch(color), box);
+    }
+
+    void DebugRenderer::AddColoredSphere(const Sphere& sphere, const Vec3& color)
+    {
+        AddSphereToBatch(GetOrCreateColorBatch(color), sphere);
     }
 
     Vec3 DebugRenderer::CirclePoint(const Vec3& center, float angleRad, float radius, int axis)
@@ -80,13 +120,25 @@ namespace Debugger
         graphics->DrawDebugLines(
             vertices.data(),
             vertices.size(),
-            shaderProgram, 
+            shaderProgram,
             color
         );
+
+        // One extra draw call per distinct color - fine for debug-only geometry.
+        for (const ColoredLineBatch& batch : coloredBatches)
+        {
+            graphics->DrawDebugLines(
+                batch.vertices.data(),
+                batch.vertices.size(),
+                shaderProgram,
+                batch.color
+            );
+        }
     }
 
     void DebugRenderer::Clear()
     {
 	    vertices.clear();
+	    coloredBatches.clear();
     }
 }
