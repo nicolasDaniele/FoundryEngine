@@ -4,6 +4,7 @@
 #include <fstream>
 #include <vector>
 #include "GraphicsEngine/ShaderLoader.h"
+#include "EngineInterfaces/GraphicsTypes.h"
 
 GLuint ShaderLoader::CreateProgram(const char* vertexShaderFilename, const char* fragmentShaderFilename)
 {
@@ -54,13 +55,30 @@ std::string ShaderLoader::ReadShader(const char* filename)
 	return shaderCode;
 }
 
+std::string ShaderLoader::InjectSharedDefines(std::string source)
+{
+	// Keeps MAX_LIGHTS in sync with EngineInterfaces/GraphicsTypes.h
+	// automatically: every shader gets "#define MAX_LIGHTS <value>" injected
+	// right after its #version line, so lit shaders never need a hand-copied
+	// #define that could drift out of sync with the engine's actual constant.
+	std::string defineLine = "#define MAX_LIGHTS " + std::to_string(MAX_LIGHTS) + "\n";
+
+	size_t versionLineEnd = source.find('\n');
+	if (versionLineEnd == std::string::npos)
+		return defineLine + source;
+
+	return source.substr(0, versionLineEnd + 1) + defineLine + source.substr(versionLineEnd + 1);
+}
+
 GLuint ShaderLoader::CreateShader(GLenum shaderType, std::string source, const char* shaderName)
 {
+	source = InjectSharedDefines(source);
+
 	int compile_result = 0;
 	GLuint shader = glCreateShader(shaderType);
 
 	const char* shader_code_ptr = source.c_str();
-	const int shader_code_size = source.size();
+	const int shader_code_size = (int)source.size();
 
 	glShaderSource(shader, 1, &shader_code_ptr,	&shader_code_size);
 	glCompileShader(shader);

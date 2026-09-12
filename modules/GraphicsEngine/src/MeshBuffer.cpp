@@ -58,9 +58,13 @@ void MeshBuffer::LoadMeshData(const Mesh& mesh, ShaderType _shaderType)
         (void*)offsetof(Vertex, normal)
     );
 
+    // Lit variants reuse the exact same vertex layout as their unlit
+    // counterparts - only the uniforms and shader program differ (see
+    // MeshRenderer) - so they fall through to the same attribute setup here.
     switch (_shaderType)
     {
     case S_COLOR:
+    case S_COLOR_LIT:
         // color
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(
@@ -70,6 +74,7 @@ void MeshBuffer::LoadMeshData(const Mesh& mesh, ShaderType _shaderType)
         );
         break;
     case S_TEXTURE:
+    case S_TEXTURE_LIT:
         // color
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(

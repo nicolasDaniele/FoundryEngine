@@ -8,6 +8,7 @@
 #include "GraphicsEngine/ShaderLoader.h"
 #include "GraphicsEngine/TextureLoader.h"
 #include "GraphicsEngine/GraphicsData.h"
+#include "GraphicsEngine/LightData.h"
 #include "EngineInterfaces/GraphicsPublicData.h"
 
 Graphics::Graphics(CameraParams cameraParams, GLADloadproc loadProc)
@@ -50,12 +51,22 @@ Graphics::Graphics(CameraParams cameraParams, GLADloadproc loadProc)
 		(void *)offsetof(DebugVertex, color));
 
 	glBindVertexArray(0);
+
+	// Per-frame uniform buffer (camera + lights), shared by every lit shader.
+	// Filled once per frame in Render() instead of being re-uploaded per MeshRenderer.
+	glGenBuffers(1, &frameUBO);
+	glBindBuffer(GL_UNIFORM_BUFFER, frameUBO);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(FrameUBOData), nullptr, GL_DYNAMIC_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, frameUBO); // fixed binding point for the engine's lifetime
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 Graphics::~Graphics()
 {
 	delete camera;
 
+	if (frameUBO)
+		glDeleteBuffers(1, &frameUBO);
 	if (debugVBO)
 		glDeleteBuffers(1, &debugVBO);
 	if (debugVAO)
@@ -65,8 +76,16 @@ Graphics::~Graphics()
 uint32_t Graphics::CreateShaderProgram(const char* vertexShaderPath, const char* fragmentShaderPath)
 {
 	ShaderLoader shaderLoader;
-	return shaderLoader.CreateProgram(vertexShaderPath,
-									  fragmentShaderPath);
+	uint32_t program = shaderLoader.CreateProgram(vertexShaderPath, fragmentShaderPath);
+
+	// Bind this program's "FrameData" uniform block (if it declares one) to the
+	// same binding point frameUBO is bound to. Shaders that don't declare
+	// FrameData (unlit shaders) get GL_INVALID_INDEX back and are simply skipped.
+	GLuint blockIndex = glGetUniformBlockIndex(program, "FrameData");
+	if (blockIndex != GL_INVALID_INDEX)
+		glUniformBlockBinding(program, blockIndex, 0);
+
+	return program;
 }
 
 void Graphics::DrawDebugLines(const Vec3* vertices, int vertexCount,
@@ -110,33 +129,33 @@ MeshRendererHandle Graphics::CreateMeshRenderer(MeshType meshType, ShaderType sh
 	meshBuffer->LoadMeshData(mesh, shaderType);
 
 	uint32_t shaderProgram = CreateShaderProgram(vertexShaderPath, fragmentShaderPath);
-		
-	for (uint32_t i = 0; i < MRSlots.size(); i++)
+
+	uint32_t index;
+
+	// Reuse a freed slot in O(1) instead of scanning MRSlots for one.
+	if (!freeMRIndices.empty())
 	{
-		if (!MRSlots[i].alive)
-		{
-			MRSlots[i].alive = true;
-			MRSlots[i].generation++;
+		index = freeMRIndices.back();
+		freeMRIndices.pop_back();
 
-			MRSlots[i].renderer = std::move(std::make_unique<MeshRenderer>(std::move(meshBuffer), position, scale));
-			MRSlots[i].renderer->SetShaderProgram(shaderProgram);
-			MRSlots[i].renderer->InitUniforms();
-
-			return { i, MRSlots[i].generation };
-		}
+		MRSlots[index].alive = true;
+		MRSlots[index].generation++;
+		MRSlots[index].renderer = std::make_unique<MeshRenderer>(std::move(meshBuffer), position, scale);
+	}
+	else
+	{
+		MRSlots.emplace_back(
+			std::make_unique<MeshRenderer>(std::move(meshBuffer), position, scale),
+			0,
+			true
+		);
+		index = (uint32_t)(MRSlots.size() - 1);
 	}
 
-	MRSlots.emplace_back(
-		std::make_unique<MeshRenderer>(std::move(meshBuffer), position, scale),
-		0,
-		true
-	);
-
-	uint32_t index = (uint32_t)(MRSlots.size() - 1);
 	MRSlots[index].renderer->SetShaderProgram(shaderProgram);
 	MRSlots[index].renderer->InitUniforms();
 
-	return { index, 0 };
+	return { index, MRSlots[index].generation };
 }
 
 void Graphics::DestroyMeshRenderer(MeshRendererHandle meshHandle)
@@ -151,6 +170,8 @@ void Graphics::DestroyMeshRenderer(MeshRendererHandle meshHandle)
     slot.renderer.reset();
     slot.alive = false;
     slot.generation++;
+
+    freeMRIndices.push_back(meshHandle.index);
 }
 
 bool Graphics::IsValidMeshRenderer(MeshRendererHandle meshHandle)
@@ -203,6 +224,17 @@ void Graphics::SetTextureTilingToMeshRenderer(MeshRendererHandle meshHandle, Vec
 	MRSlots[meshHandle.index].renderer->SetTextureTiling(tiling);
 }
 
+void Graphics::SetMeshRendererMaterial(MeshRendererHandle meshHandle, Material material)
+{
+	if (!IsValidMeshRenderer(meshHandle))
+	{
+		std::cout << "[GraphicsEngine] Invalid MeshRendererHandle." << std::endl;
+		return;
+	}
+
+	MRSlots[meshHandle.index].renderer->SetMaterial(material);
+}
+
 Vec3 Graphics::GetMeshRendererPosition(MeshRendererHandle meshHandle)
 {
 	if (!IsValidMeshRenderer(meshHandle))
@@ -223,6 +255,100 @@ Vec3 Graphics::GetMeshRendererScale(MeshRendererHandle meshHandle)
 	}
 
 	return MRSlots[meshHandle.index].renderer->GetScale();
+}
+
+LightHandle Graphics::CreateLight(LightParams lightParams)
+{
+	if (freeLightIndices.empty() && lightSlots.size() >= MAX_LIGHTS)
+	{
+		std::cout << "[GraphicsEngine] Max light count (" << MAX_LIGHTS << ") reached." << std::endl;
+		return { (uint32_t)-1, 0 };
+	}
+
+	uint32_t index;
+
+	// Same O(1) freelist reuse pattern as CreateMeshRenderer.
+	if (!freeLightIndices.empty())
+	{
+		index = freeLightIndices.back();
+		freeLightIndices.pop_back();
+
+		lightSlots[index].alive = true;
+		lightSlots[index].generation++;
+		lightSlots[index].params = lightParams;
+	}
+	else
+	{
+		lightSlots.push_back({ lightParams, 0, true });
+		index = (uint32_t)(lightSlots.size() - 1);
+	}
+
+	return { index, lightSlots[index].generation };
+}
+
+void Graphics::DestroyLight(LightHandle lightHandle)
+{
+	if (!IsValidLight(lightHandle))
+	{
+		std::cout << "[GraphicsEngine] Invalid LightHandle." << std::endl;
+		return;
+	}
+
+	lightSlots[lightHandle.index].alive = false;
+	lightSlots[lightHandle.index].generation++;
+
+	freeLightIndices.push_back(lightHandle.index);
+}
+
+bool Graphics::IsValidLight(LightHandle lightHandle)
+{
+	return lightHandle.index < lightSlots.size() &&
+	       lightSlots[lightHandle.index].alive &&
+	       lightSlots[lightHandle.index].generation == lightHandle.generation;
+}
+
+void Graphics::SetLightPosition(LightHandle lightHandle, Vec3 newPosition)
+{
+	if (!IsValidLight(lightHandle))
+	{
+		std::cout << "[GraphicsEngine] Invalid LightHandle." << std::endl;
+		return;
+	}
+
+	lightSlots[lightHandle.index].params.position = newPosition;
+}
+
+void Graphics::SetLightDirection(LightHandle lightHandle, Vec3 newDirection)
+{
+	if (!IsValidLight(lightHandle))
+	{
+		std::cout << "[GraphicsEngine] Invalid LightHandle." << std::endl;
+		return;
+	}
+
+	lightSlots[lightHandle.index].params.direction = newDirection;
+}
+
+void Graphics::SetLightColor(LightHandle lightHandle, Vec3 newColor)
+{
+	if (!IsValidLight(lightHandle))
+	{
+		std::cout << "[GraphicsEngine] Invalid LightHandle." << std::endl;
+		return;
+	}
+
+	lightSlots[lightHandle.index].params.color = newColor;
+}
+
+void Graphics::SetLightIntensity(LightHandle lightHandle, float newIntensity)
+{
+	if (!IsValidLight(lightHandle))
+	{
+		std::cout << "[GraphicsEngine] Invalid LightHandle." << std::endl;
+		return;
+	}
+
+	lightSlots[lightHandle.index].params.intensity = newIntensity;
 }
 
 void Graphics::RotateCamera(float xOffset, float yOffset)
@@ -280,10 +406,27 @@ void Graphics::Render()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(0.1f, 0.0f, 0.12f, 1.0f);
 
+	// Fill and upload the per-frame data (view-projection, camera position and
+	// active lights) once, instead of once per MeshRenderer.
+	FrameUBOData frameData{};
+	frameData.vp = camera->GetProjectionMatrix() * camera->GetViewMatrix();
+	frameData.viewPos = camera->GetCameraPosition();
+
+	frameData.lightCount = 0;
+	for (auto& slot : lightSlots)
+	{
+		if (slot.alive && frameData.lightCount < MAX_LIGHTS)
+			frameData.lights[frameData.lightCount++] = ToGPULight(slot.params);
+	}
+
+	glBindBuffer(GL_UNIFORM_BUFFER, frameUBO);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(FrameUBOData), &frameData);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
 	for (uint32_t i = 0; i < MRSlots.size(); i++)
 	{
 		if (MRSlots[i].alive)
-			MRSlots[i].renderer->Draw(camera->GetProjectionMatrix() * camera->GetViewMatrix());
+			MRSlots[i].renderer->Draw(frameData.vp);
 	}
 }
 

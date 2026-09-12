@@ -21,6 +21,10 @@ const char* FLAT_VS_PATH = "Assets/Shaders/FlatColor.vs";
 const char* FLAT_FS_PATH = "Assets/Shaders/FlatColor.fs";
 const char* TEXTURED_VS_PATH = "Assets/Shaders/Textured.vs";
 const char* TEXTURED_FS_PATH = "Assets/Shaders/Textured.fs";
+const char* LIT_VS_PATH = "Assets/Shaders/Lit.vs";
+const char* LIT_FS_PATH = "Assets/Shaders/Lit.fs";
+const char* TEXTURED_LIT_VS_PATH = "Assets/Shaders/TexturedLit.vs";
+const char* TEXTURED_LIT_FS_PATH = "Assets/Shaders/TexturedLit.fs";
 
 const char* WOOD_TEXTURE_PATH = "Assets/Textures/wood.jpg";
 
@@ -48,6 +52,7 @@ bool tWasPressed = false;
 
 void HandleInput(GLFWwindow* window, float frameTime);
 void OrbitCamera_Callback(GLFWwindow* window, double xposIn, double yposIn);
+void SetupSceneLighting();
 void SetupFloorLayout();
 float GetRandomColor();
 
@@ -103,15 +108,27 @@ int main()
 	// ------------------ End Engines Initialization ------------------ \\
 
 
+	// ---------------------------- Lighting Setup ---------------------------- \\
+
+	SetupSceneLighting();
+
+	// -------------------------- End Lighting Setup -------------------------- \\
+
+
 	// ------------------------ Player Setup ------------------------ \\
 
 	Vec3 ballStartPosition = Vec3(0.0f, 20.0f, 30.0f);
 	Vec3 ballSize = Vec3(0.5f, 0.5f, 0.5f);
 
-	MeshRendererHandle ballRenderer = graphics->CreateMeshRenderer(MeshType::M_SPHERE, ShaderType::S_COLOR,
+	MeshRendererHandle ballRenderer = graphics->CreateMeshRenderer(MeshType::M_SPHERE, ShaderType::S_COLOR_LIT,
 		ballStartPosition, ballSize,
 		Vec3(0.4f, 0.4f, 0.4f), // Color
-		FLAT_VS_PATH, FLAT_FS_PATH);
+		LIT_VS_PATH, LIT_FS_PATH);
+
+	Material ballMaterial;
+	ballMaterial.ambientStrength = 0.15f;
+	ballMaterial.shininess = 64.0f;
+	graphics->SetMeshRendererMaterial(ballRenderer, ballMaterial);
 	
 	RigidbodyHandle ballBody = physics->CreateRigidbody(BodyType::B_SPHERE, ballStartPosition);
 	physics->SetRigidbodySphereRadius(ballBody, ballSize.y);
@@ -246,99 +263,123 @@ void OrbitCamera_Callback(GLFWwindow* window, double xPosIn, double yPosIn)
 	lastMouseYPos = yPos;
 }
 
+void SetupSceneLighting()
+{
+	// Sun-like directional light.
+	LightParams sunLight;
+	sunLight.type = L_DIRECTIONAL;
+	sunLight.direction = Vec3(-0.3f, -1.0f, -0.2f);
+	sunLight.color = Vec3(1.0f, 0.95f, 0.9f);
+	sunLight.intensity = 1.0f;
+	graphics->CreateLight(sunLight);
+
+	// Cool-toned point light used as a fill light over the play area.
+	LightParams fillLight;
+	fillLight.type = L_POINT;
+	fillLight.position = Vec3(0.0f, 15.0f, 20.0f);
+	fillLight.color = Vec3(0.6f, 0.7f, 1.0f);
+	fillLight.intensity = 0.6f;
+	graphics->CreateLight(fillLight);
+}
+
 void SetupFloorLayout()
 {
 	// boxRenderer 0
-	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE_LIT,
 			Vec3(0.0f, 0.0f, 0.0f),		// Position
 			Vec3(6.0f, 0.2f, 80.0f),	// Size
 			Vec3(GetRandomColor()),		// Color
-			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+			TEXTURED_LIT_VS_PATH, TEXTURED_LIT_FS_PATH));
 
 	// boxRenderer 1
-	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE_LIT,
 			Vec3(0.0f, -2.0f, -65.0f),	// Position
 			Vec3(6.0f, 0.2f, 50.0f),	// Size
 			Vec3(GetRandomColor()),		// Color
-			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+			TEXTURED_LIT_VS_PATH, TEXTURED_LIT_FS_PATH));
 	
 	// boxRenderer 2
-	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE_LIT,
 			Vec3(0.0f, 0.0f, -105.0f),	// Position
 			Vec3(2.0f, 0.2f, 20.0f),	// Size
 			Vec3(GetRandomColor()),		// Color
-			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+			TEXTURED_LIT_VS_PATH, TEXTURED_LIT_FS_PATH));
 
 	// boxRenderer 3
-	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE_LIT,
 			Vec3(0.0f, 2.0f, -130.0f),	// Position
 			Vec3(2.0f, 0.2f, 20.0f),	// Size
 			Vec3(GetRandomColor()),		// Color
-			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+			TEXTURED_LIT_VS_PATH, TEXTURED_LIT_FS_PATH));
 
 	// boxRenderer 4
-	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE_LIT,
 			Vec3(0.0f, 4.0f, -155.0f),	// Position
 			Vec3(2.0f, 0.2f, 20.0f),	// Size
 			Vec3(GetRandomColor()),		// Color
-			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+			TEXTURED_LIT_VS_PATH, TEXTURED_LIT_FS_PATH));
 
 	// boxRenderer 5
-	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE_LIT,
 			Vec3(5.0f, 5.0f, -175.0f),	// Position
 			Vec3(4.0f, 0.2f, 10.0f),	// Size
 			Vec3(GetRandomColor()),		// Color
-			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+			TEXTURED_LIT_VS_PATH, TEXTURED_LIT_FS_PATH));
 
 	// boxRenderer 6
-	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE_LIT,
 			Vec3(0.0f, 5.0f, -192.0f),	// Position
 			Vec3(4.0f, 0.2f, 10.0f),	// Size
 			Vec3(GetRandomColor()),		// Color
-			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+			TEXTURED_LIT_VS_PATH, TEXTURED_LIT_FS_PATH));
 
 	// boxRenderer 7
-	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE_LIT,
 			Vec3(-5.0f, 5.0f, -214.0f),	// Position
 			Vec3(4.0f, 0.2f, 10.0f),	// Size
 			Vec3(GetRandomColor()),		// Color
-			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+			TEXTURED_LIT_VS_PATH, TEXTURED_LIT_FS_PATH));
 
 	// boxRenderer 8
-	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE_LIT,
 			Vec3(0.0f, 5.0f, -255.0f),	// Position
 			Vec3(6.0f, 0.2f, 50.0f),	// Size
 			Vec3(GetRandomColor()),		// Color
-			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+			TEXTURED_LIT_VS_PATH, TEXTURED_LIT_FS_PATH));
 
 	// GOAL
 	// boxRenderer 9
-	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE_LIT,
 			Vec3(0.0f, 5.0f, -290.0f),	// Position
 			Vec3(30.0f, 0.2f, 20.0f),	// Size
 			Vec3(1.0f),					// Color
-			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+			TEXTURED_LIT_VS_PATH, TEXTURED_LIT_FS_PATH));
 	
 	// boxRenderer 10 (back wall)
-	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE_LIT,
 			Vec3(0.0f, 8.0f, -300.0f),	// Position
 			Vec3(30.0f, 6.0f, 0.2f),	// Size
 			Vec3(1.0f),					// Color
-			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+			TEXTURED_LIT_VS_PATH, TEXTURED_LIT_FS_PATH));
 
 	// boxRenderer 11 (left wall)
-	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE_LIT,
 			Vec3(-15.0f, 8.0f, -290.0f),// Position
 			Vec3(0.2f, 6.0f, 20.0f),	// Size
 			Vec3(1.0f),					// Color
-			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+			TEXTURED_LIT_VS_PATH, TEXTURED_LIT_FS_PATH));
 
 	// boxRenderer 12 (right wall)
-	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE,
+	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE_LIT,
 			Vec3(15.0f, 8.0f, -290.0f),	// Position
 			Vec3(0.2f, 6.0f, 20.0f),	// Size
 			Vec3(1.0f),					// Color
-			TEXTURED_VS_PATH, TEXTURED_FS_PATH));
+			TEXTURED_LIT_VS_PATH, TEXTURED_LIT_FS_PATH));
+
+	Material floorMaterial;
+	floorMaterial.ambientStrength = 0.2f;
+	floorMaterial.specularStrength = 0.2f;
+	floorMaterial.shininess = 16.0f;
 	
 	for(int i = 0; i < boxRenderers.size(); i++)
 	{
@@ -352,6 +393,8 @@ void SetupFloorLayout()
 
 		float yTiling = graphics->GetMeshRendererScale(boxRenderers[i]).z / 2.0f;
 		graphics->SetTextureTilingToMeshRenderer(boxRenderers[i], Vec2(1.0f, yTiling));
+
+		graphics->SetMeshRendererMaterial(boxRenderers[i], floorMaterial);
 
 		Vec3 boxPosition = graphics->GetMeshRendererPosition(boxRenderers[i]);
 		CoreGeometry::OBB boxGeomery;

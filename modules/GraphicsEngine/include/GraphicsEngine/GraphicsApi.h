@@ -31,6 +31,16 @@ struct MeshRendererSlot
     MeshRendererSlot& operator=(MeshRendererSlot&&) = default;
 };
 
+/// Internal storage slot for Lights. Unlike MeshRendererSlot, this holds
+/// plain data with no GPU resource ownership, so it stays trivially
+/// copyable/movable with the compiler-generated special members.
+struct LightSlot
+{
+    LightParams params;
+    uint32_t generation = 0;
+    bool alive = false;
+};
+
 class GRAPHICS_API Graphics : public IGraphics
 {
 public:
@@ -59,9 +69,18 @@ public:
 	void UpdateMeshRendererPosition(MeshRendererHandle meshHandle, Vec3 newPosition) override;
 	int LoadTextureToMeshRenderer(const char* textureFileName, MeshRendererHandle meshHandle) override;
 	void SetTextureTilingToMeshRenderer(MeshRendererHandle meshHandle, Vec2 tiling) override;
+	void SetMeshRendererMaterial(MeshRendererHandle meshHandle, Material material) override;
 	Vec3 GetMeshRendererPosition(MeshRendererHandle meshHandle) override;
 	Vec3 GetMeshRendererScale(MeshRendererHandle meshHandle) override;
 	bool IsValidMeshRenderer(MeshRendererHandle meshHandle) override;
+
+	LightHandle CreateLight(LightParams lightParams) override;
+	void DestroyLight(LightHandle lightHandle) override;
+	void SetLightPosition(LightHandle lightHandle, Vec3 newPosition) override;
+	void SetLightDirection(LightHandle lightHandle, Vec3 newDirection) override;
+	void SetLightColor(LightHandle lightHandle, Vec3 newColor) override;
+	void SetLightIntensity(LightHandle lightHandle, float newIntensity) override;
+	bool IsValidLight(LightHandle lightHandle) override;
 	
 	void RotateCamera(float xOffset, float yOffset) override;
 	void CameraOrbit(Vec3 target, float distance, float xOffset, float yOffset, float frameTime, float smoothSpeed) override;
@@ -72,8 +91,14 @@ public:
 
 private:
 	Camera* camera = nullptr;
+
 	std::vector<MeshRendererSlot> MRSlots;
+	std::vector<uint32_t> freeMRIndices; // reusable indices, avoids an O(n) scan in CreateMeshRenderer
+
+	std::vector<LightSlot> lightSlots;
+	std::vector<uint32_t> freeLightIndices; // same O(1) reuse pattern as freeMRIndices
 
 	uint32_t debugVAO = 0;
 	uint32_t debugVBO = 0;
+	uint32_t frameUBO = 0; // per-frame uniform buffer (view-projection, camera position, lights)
 };

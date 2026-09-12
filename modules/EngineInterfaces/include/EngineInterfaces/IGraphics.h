@@ -29,6 +29,14 @@ struct MeshRendererHandle
     uint32_t generation;
 };
 
+/// Lightweight handle used to reference a Light.
+/// Follows the same index + generation pattern as MeshRendererHandle.
+struct LightHandle
+{
+    uint32_t index;
+    uint32_t generation;
+};
+
 class IGraphics
 {
 public:
@@ -41,7 +49,7 @@ public:
 	/// - The slot is reused (generation mismatch).
 	///
 	/// @param meshType Type of Mesh to render (triangle, quad, cube, sphere).
-	/// @param shaderType Type of shader to render (S_COLOR = flat color; S_TEXTURE = textured material).
+	/// @param shaderType Type of shader to render (S_COLOR/S_TEXTURE = unlit; S_COLOR_LIT/S_TEXTURE_LIT = lit).
 	/// @param position Initial world position.
 	/// @param scale Initial scale.
 	/// @param color Color of the MeshRenderer (in RGB channels, with values from 0 to 1).
@@ -63,8 +71,12 @@ public:
 	/// the call is ignored and the function returns -1.
 	virtual int LoadTextureToMeshRenderer(const char* textureFilePath, MeshRendererHandle meshHandle) = 0;
 	/// Sets a tiling for a MeshRenderer's texture.
-	/// If the handle is invalid or the MeshRenderer was not created with ShaderType::S_TEXTURE, the call is ignored.
+	/// If the handle is invalid or the MeshRenderer was not created with a textured ShaderType, the call is ignored.
 	virtual void SetTextureTilingToMeshRenderer(MeshRendererHandle meshHandle, Vec2 tiling) = 0;
+	/// Sets the lighting material of a MeshRenderer.
+	/// Only affects meshes created with a *_LIT ShaderType; ignored otherwise.
+	/// If the handle is invalid, the call is ignored.
+	virtual void SetMeshRendererMaterial(MeshRendererHandle meshHandle, Material material) = 0;
 	/// Returns a MeshRenderer's current position.
 	/// If the handle is invalid, returns Vec3(0.0f).
 	virtual Vec3 GetMeshRendererPosition(MeshRendererHandle meshHandle) = 0;
@@ -79,6 +91,24 @@ public:
 	/// - slot is alive
 	/// - generation matches
 	virtual bool IsValidMeshRenderer(MeshRendererHandle meshHandle) = 0;
+
+	/// Creates a Light and returns a handle to it.
+	/// Returns an invalid handle (check with IsValidLight) if MAX_LIGHTS is already reached.
+	/// @param lightParams Initial configuration of the light (see GraphicsPublicData.h).
+	/// @return LightHandle used to reference the light.
+	virtual LightHandle CreateLight(LightParams lightParams) = 0;
+	/// Destroys a Light. If the handle is invalid, the call is ignored.
+	virtual void DestroyLight(LightHandle lightHandle) = 0;
+	/// Updates a Light's position. Ignored for directional lights.
+	virtual void SetLightPosition(LightHandle lightHandle, Vec3 newPosition) = 0;
+	/// Updates a Light's direction. Used by directional and spot lights.
+	virtual void SetLightDirection(LightHandle lightHandle, Vec3 newDirection) = 0;
+	/// Updates a Light's color.
+	virtual void SetLightColor(LightHandle lightHandle, Vec3 newColor) = 0;
+	/// Updates a Light's intensity multiplier.
+	virtual void SetLightIntensity(LightHandle lightHandle, float newIntensity) = 0;
+	/// Checks whether a light handle is still valid (index in bounds, slot alive, generation matches).
+	virtual bool IsValidLight(LightHandle lightHandle) = 0;
 	
 	/// Rotates the camera in place (first-person style).
 	/// If Graphics' camera is null, the call is ignored.
