@@ -286,61 +286,92 @@ void SetupSceneLighting()
 		pointLightGizmos.push_back(params);
 	};
 
-	LightParams fillLight_L1;
-	fillLight_L1.type = L_POINT;
-	fillLight_L1.position = Vec3(-4.0f, 6.0f, 30.0f);
-	fillLight_L1.color = Vec3(0.5f, 0.7f, 0.2f);
-	fillLight_L1.intensity = 0.8f;
-	addPointLight(fillLight_L1);
+	// Spot Lights
+	LightParams spotLight_S1;
+	spotLight_S1.type = L_SPOT;
+	spotLight_S1.position = Vec3(0.0f, 3.0f, 30.0f);
+	spotLight_S1.color = Vec3(1.f, 1.f, 1.f);
+	spotLight_S1.intensity = 1.;
+	addPointLight(spotLight_S1);
 
-	LightParams fillLight_R1;
-	fillLight_R1.type = L_POINT;
-	fillLight_R1.position = Vec3(4.0f, 6.0f, 10.0f);
-	fillLight_R1.color = Vec3(0.7f, 0.5f, 0.2f);
-	fillLight_R1.intensity = 0.8f;
-	addPointLight(fillLight_R1);
+	LightParams spotLight_S2;
+	spotLight_S2.type = L_SPOT;
+	spotLight_S2.position = Vec3(0.0f, 3.0f, 15.0f);
+	spotLight_S2.color = Vec3(1.f, 1.f, 1.f);
+	spotLight_S2.intensity = 1.;
+	addPointLight(spotLight_S2);
 
-	LightParams fillLight_L2;
-	fillLight_L2.type = L_POINT;
-	fillLight_L2.position = Vec3(-4.0f, 6.0f, -10.0f);
-	fillLight_L2.color = Vec3(0.5f, 0.7f, 0.2f);
-	fillLight_L2.intensity = 0.8f;
-	addPointLight(fillLight_L2);
+	LightParams spotLight_S3;
+	spotLight_S3.type = L_SPOT;
+	spotLight_S3.position = Vec3(0.0f, 3.0f, 0.0f);
+	spotLight_S3.color = Vec3(1.f, 1.f, 1.f);
+	spotLight_S3.intensity = 1.;
+	addPointLight(spotLight_S3);
 
-	LightParams fillLight_R2;
-	fillLight_R2.type = L_POINT;
-	fillLight_R2.position = Vec3(4.0f, 6.0f, -30.0f);
-	fillLight_R2.color = Vec3(0.7f, 0.5f, 0.2f);
-	fillLight_R2.intensity = 0.8f;
-	addPointLight(fillLight_R2);
+	LightParams spotLight_S4;
+	spotLight_S4.type = L_SPOT;
+	spotLight_S4.position = Vec3(0.0f, 3.0f, -15.0f);
+	spotLight_S4.color = Vec3(1.f, 1.f, 1.f);
+	spotLight_S4.intensity = 1.;
+	addPointLight(spotLight_S4);
 
-	LightParams fillLight_L3;
-	fillLight_L3.type = L_POINT;
-	fillLight_L3.position = Vec3(-4.0f, 6.0f, -50.0f);
-	fillLight_L3.color = Vec3(0.5f, 0.7f, 0.2f);
-	fillLight_L3.intensity = 0.8f;
-	addPointLight(fillLight_L3);
 
-	LightParams fillLight_R3;
-	fillLight_R3.type = L_POINT;
-	fillLight_R3.position = Vec3(4.0f, 6.0f, -70.0f);
-	fillLight_R3.color = Vec3(0.7f, 0.5f, 0.2f);
-	fillLight_R3.intensity = 0.8f;
-	addPointLight(fillLight_R3);
+	// Point Lights
+	LightParams pointLight_L1;
+	pointLight_L1.type = L_POINT;
+	pointLight_L1.position = Vec3(-4.0f, 5.0f, 30.0f);
+	pointLight_L1.color = Vec3(0.5f, 0.7f, 0.2f);
+	pointLight_L1.intensity = 0.8f;
+	addPointLight(pointLight_L1);
 
-	LightParams fillLight_L4;
-	fillLight_L4.type = L_POINT;
-	fillLight_L4.position = Vec3(-4.0f, 6.0f, -90.0f);
-	fillLight_L4.color = Vec3(0.5f, 0.7f, 0.2f);
-	fillLight_L4.intensity = 0.8f;
-	addPointLight(fillLight_L4);
+	LightParams pointLight_R1;
+	pointLight_R1.type = L_POINT;
+	pointLight_R1.position = Vec3(4.0f, 5.0f, 10.0f);
+	pointLight_R1.color = Vec3(0.7f, 0.5f, 0.2f);
+	pointLight_R1.intensity = 0.8f;
+	addPointLight(pointLight_R1);
 
-	LightParams fillLight_R4;
-	fillLight_R4.type = L_POINT;
-	fillLight_R4.position = Vec3(4.0f, 6.0f, -110.0f);
-	fillLight_R4.color = Vec3(0.7f, 0.5f, 0.2f);
-	fillLight_R4.intensity = 0.8f;
-	addPointLight(fillLight_R4);
+	LightParams pointLight_L2;
+	pointLight_L2.type = L_POINT;
+	pointLight_L2.position = Vec3(-4.0f, 5.0f, -10.0f);
+	pointLight_L2.color = Vec3(0.5f, 0.7f, 0.2f);
+	pointLight_L2.intensity = 0.8f;
+	addPointLight(pointLight_L2);
+
+	LightParams pointLight_R2;
+	pointLight_R2.type = L_POINT;
+	pointLight_R2.position = Vec3(4.0f, 5.0f, -30.0f);
+	pointLight_R2.color = Vec3(0.7f, 0.5f, 0.2f);
+	pointLight_R2.intensity = 0.8f;
+	addPointLight(pointLight_R2);
+
+	LightParams pointLight_L3;
+	pointLight_L3.type = L_POINT;
+	pointLight_L3.position = Vec3(-4.0f, 5.0f, -50.0f);
+	pointLight_L3.color = Vec3(0.5f, 0.7f, 0.2f);
+	pointLight_L3.intensity = 0.8f;
+	addPointLight(pointLight_L3);
+
+	LightParams pointLight_R3;
+	pointLight_R3.type = L_POINT;
+	pointLight_R3.position = Vec3(4.0f, 5.0f, -70.0f);
+	pointLight_R3.color = Vec3(0.7f, 0.5f, 0.2f);
+	pointLight_R3.intensity = 0.8f;
+	addPointLight(pointLight_R3);
+
+	LightParams pointLight_L4;
+	pointLight_L4.type = L_POINT;
+	pointLight_L4.position = Vec3(-4.0f, 5.0f, -90.0f);
+	pointLight_L4.color = Vec3(0.5f, 0.7f, 0.2f);
+	pointLight_L4.intensity = 0.8f;
+	addPointLight(pointLight_L4);
+
+	LightParams pointLight_R4;
+	pointLight_R4.type = L_POINT;
+	pointLight_R4.position = Vec3(4.0f, 5.0f, -110.0f);
+	pointLight_R4.color = Vec3(0.7f, 0.5f, 0.2f);
+	pointLight_R4.intensity = 0.8f;
+	addPointLight(pointLight_R4);
 }
 
 void SetupFloorLayout()
