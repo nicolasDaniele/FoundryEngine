@@ -1,6 +1,7 @@
 add_library(Core
     src/Geometry3D.cpp
     src/Matrices.cpp
+    src/Quaternions.cpp
     src/Utils.cpp
     src/Vectors.cpp
 )

@@ -5,6 +5,7 @@
 #include <ctime>
 #include "Core/Geometry3D.h"
 #include "Core/Vectors.h"
+#include "Core/Quaternions.h"
 #include "Debugger/DebugRenderer.h"
 #include "EngineInterfaces/IGraphics.h"
 #include "EngineInterfaces/IPhysics.h"
@@ -27,6 +28,7 @@ const char* TEXTURED_LIT_VS_PATH = "Assets/Shaders/TexturedLit.vs";
 const char* TEXTURED_LIT_FS_PATH = "Assets/Shaders/TexturedLit.fs";
 
 const char* WOOD_TEXTURE_PATH = "Assets/Textures/wood.jpg";
+const char* METAL_TEXTURE_PATH = "Assets/Textures/metal.png";
 
 float lastMouseXPos = WIDTH / 2.0f;
 float lastMouseYPos = HEIGHT / 2.0f;
@@ -56,6 +58,15 @@ PlayerObject* player = nullptr;
 
 bool drawDebug = false;
 bool tWasPressed = false;
+
+// TO TEST
+bool floorIsRotating = false;
+float floorRotRate = 0.0f;
+// Nuevas variables globales
+Vec3 floor0AngVel = Vec3(0.0f);       // lo que realmente le estamos pasando a la física
+Vec3 floor0TargetAngVel = Vec3(0.0f); // lo que el input está pidiendo
+const float floorAngularAccel = 3.0f; // qué tan rápido floor0AngVel alcanza el target (rad/s por segundo) - ajustable a gusto
+
 
 void HandleInput(GLFWwindow* window, float frameTime);
 void OrbitCamera_Callback(GLFWwindow* window, double xposIn, double yposIn);
@@ -92,7 +103,7 @@ int main()
 	cameraParams.height = HEIGHT;
 	cameraParams.nearPlane = 0.1f;
 	cameraParams.farPlane = 100.0f;
-	cameraParams.position = Vec3(0.0f, 1.0f, 40.0f);
+	cameraParams.position = Vec3(-40.0f, 10.0f, 40.0f);
 	
 	graphics = GetGraphicsEngine(cameraParams, (GLADloadproc)glfwGetProcAddress);
 	if (!graphics)
@@ -124,23 +135,37 @@ int main()
 
 	// ------------------------ Player Setup ------------------------ \\
 
-	Vec3 ballStartPosition = Vec3(0.0f, 20.0f, 30.0f);
-	Vec3 ballSize = Vec3(0.5f, 0.5f, 0.5f);
+	Vec3 playerStartPosition = Vec3(0.0f, 20.0f, 30.0f);
+	Vec3 playerSize = Vec3(0.5f);
 
-	MeshRendererHandle ballRenderer = graphics->CreateMeshRenderer(MeshType::M_SPHERE, ShaderType::S_COLOR_LIT,
-		ballStartPosition, ballSize,
-		Vec3(0.4f, 0.4f, 0.4f), // Color
-		LIT_VS_PATH, LIT_FS_PATH);
+	MeshRendererHandle playerRenderer = graphics->CreateMeshRenderer(MeshType::M_SPHERE, ShaderType::S_TEXTURE_LIT,
+		playerStartPosition, playerSize,
+		Vec3(1.f), // Color
+		TEXTURED_LIT_VS_PATH, TEXTURED_LIT_FS_PATH);
 
-	Material ballMaterial;
-	ballMaterial.ambientStrength = 0.15f;
-	ballMaterial.shininess = 64.0f;
-	graphics->SetMeshRendererMaterial(ballRenderer, ballMaterial);
+	int playerTexId = graphics->LoadTextureToMeshRenderer(METAL_TEXTURE_PATH, playerRenderer);
+	if (playerTexId == -1)
+	{
+		std::cout << "[App] Texture could not be loaded for playerTexId.\n";
+		std::cin.get();
+		return -1;
+	}
+
+	Material playerMaterial;
+	playerMaterial.ambientStrength = 0.15f;
+	playerMaterial.specularStrength = 0.8f;
+	playerMaterial.shininess = 80.0f;
+	graphics->SetMeshRendererMaterial(playerRenderer, playerMaterial);
 	
-	RigidbodyHandle ballBody = physics->CreateRigidbody(BodyType::B_SPHERE, ballStartPosition);
-	physics->SetRigidbodySphereRadius(ballBody, ballSize.y);
+	RigidbodyHandle playerBody = physics->CreateRigidbody(BodyType::B_SPHERE, playerStartPosition, 
+		1.f, 1.f, 0.1f); // mass, friction, restitution
+	physics->SetRigidbodySphereRadius(playerBody, playerSize.y);
+	physics->SetRigidbodySphereRollingResistance(playerBody, 0.6f);
+	physics->SetRigidbodyFriction(playerBody, 0.7f);
+	physics->SetRigidbodyDamping(playerBody, 0.1f);
+	physics->SetRigidbodyAngularDamping(playerBody, 0.2f);
 	
-	player = new PlayerObject(ballBody, ballRenderer, physics, graphics);
+	player = new PlayerObject(playerBody, playerRenderer, physics, graphics);
 	if (!player)
 	{
 		std::cout << "[App] PlayerObject is null." << std::endl;
@@ -162,21 +187,42 @@ int main()
 		glfwPollEvents();
 		HandleInput(window, frameTime);
 
+
+		if (boxVolumes.size() > 0)
+		{
+			Vec3 angVelDelta = floor0TargetAngVel - floor0AngVel;
+			float maxStep = floorAngularAccel * frameTime;
+
+			if (CoreMath::Magnitude(angVelDelta) <= maxStep)
+				floor0AngVel = floor0TargetAngVel;
+			else
+				floor0AngVel = floor0AngVel + CoreMath::Normalized(angVelDelta) * maxStep;
+
+			physics->SetRigidbodyAngularVelocity(boxVolumes[0], floor0AngVel);
+			graphics->SetMeshRendererRotation(boxRenderers[0], physics->GetRigidbodyOrientation(boxVolumes[0]));
+		}
+
+
 		physics->Update(frameTime);		
 		player->Update(frameTime);
 
 		if(player->GetPosition().y < -10.0f)
-			player->Reset(ballStartPosition);
+			player->Reset(playerStartPosition);
 
 		// Camera Movement
-		graphics->CameraFollow(player->GetPosition(), 10.0f, frameTime, 6.0f);
+		graphics->CameraFollow(player->GetPosition(), 40.0f, frameTime, 6.0f);
+
 
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && player != nullptr)
-			graphics->CameraOrbit(player->GetPosition(), 10.0f, mouseXOffset, mouseYOffset, frameTime, 6.0f);
+			graphics->CameraOrbit(player->GetPosition(), 40.0f, mouseXOffset, mouseYOffset, frameTime, 6.0f);
 		
 		mouseXOffset = 0.0f;
 		mouseYOffset = 0.0f;
 		
+
+		graphics->SetMeshRendererRotation(boxRenderers[0], physics->GetRigidbodyOrientation(boxVolumes[0]));
+		graphics->SetMeshRendererRotation(boxRenderers[1], physics->GetRigidbodyOrientation(boxVolumes[1]));
+
 
 		// Graphics Rendering
 		graphics->Render();
@@ -187,13 +233,14 @@ int main()
 		{
 			debugRenderer->Clear();	
 	
-			debugRenderer->AddSphere({ player->GetPosition(), ballSize.x });
+			debugRenderer->AddSphere({ player->GetPosition(), playerSize.x });
+
 			for(int i = 0; i < boxRenderers.size(); i++)
 			{
-				CoreGeometry::OBB obb;
 				debugRenderer->AddBox({ 
 					graphics->GetMeshRendererPosition(boxRenderers[i]), 
-					graphics->GetMeshRendererScale(boxRenderers[i]) * 0.5f
+					graphics->GetMeshRendererScale(boxRenderers[i]) * 0.5f,
+					CoreMath::ToMat3(graphics->GetMeshRendererRotation(boxRenderers[i]))
 				});
 			}
 
@@ -248,6 +295,30 @@ void HandleInput(GLFWwindow* window, float frameTime)
 	// Player Jump
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && player != nullptr)
 		player->Jump(playerJumpImpulse * frameTime);
+
+
+
+	// TO TEST FLOOR ROTATION
+	if (boxVolumes.size() > 0)
+	{
+		if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
+			floor0TargetAngVel = Vec3(-0.5f, 0, 0);
+		else if (glfwGetKey(window, GLFW_KEY_I) == GLFW_PRESS)
+			floor0TargetAngVel = Vec3(0.5f, 0, 0);
+		else
+			floor0TargetAngVel = Vec3(0.0f);
+	}
+
+	if (boxVolumes.size() > 1)
+	{
+		if (glfwGetKey(window, GLFW_KEY_O) == GLFW_PRESS)
+			physics->SetRigidbodyAngularVelocity(boxVolumes[1], Vec3(0, -0.5f, 0));
+		else if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
+			physics->SetRigidbodyAngularVelocity(boxVolumes[1], Vec3(0, 0.5f, 0));
+		else
+			physics->SetRigidbodyAngularVelocity(boxVolumes[1], Vec3(0.0f));
+	}
+		
 }
 
 void OrbitCamera_Callback(GLFWwindow* window, double xPosIn, double yPosIn)
@@ -277,10 +348,17 @@ void OrbitCamera_Callback(GLFWwindow* window, double xPosIn, double yPosIn)
 
 void SetupSceneLighting()
 {
+	LightParams dirLight;
+	dirLight.type = L_DIRECTIONAL;
+	dirLight.color = Vec3(1.f, 1.f, 1.f);
+	dirLight.intensity = 1.;
+	graphics->CreateLight(dirLight);
+	return;
+
 	// Creates the light in the engine and also remembers its LightParams in
 	// pointLightGizmos, so the debug renderer can later draw a wireframe
 	// sphere at its position, tinted with its own color.
-	auto addPointLight = [](LightParams params)
+	auto addLight = [](LightParams params)
 	{
 		graphics->CreateLight(params);
 		pointLightGizmos.push_back(params);
@@ -289,31 +367,31 @@ void SetupSceneLighting()
 	// Spot Lights
 	LightParams spotLight_S1;
 	spotLight_S1.type = L_SPOT;
-	spotLight_S1.position = Vec3(0.0f, 3.0f, 30.0f);
+	spotLight_S1.position = Vec3(0.0f, 6.0f, 30.0f);
 	spotLight_S1.color = Vec3(1.f, 1.f, 1.f);
 	spotLight_S1.intensity = 1.;
-	addPointLight(spotLight_S1);
+	addLight(spotLight_S1);
 
 	LightParams spotLight_S2;
 	spotLight_S2.type = L_SPOT;
-	spotLight_S2.position = Vec3(0.0f, 3.0f, 15.0f);
+	spotLight_S2.position = Vec3(0.0f, 6.0f, 15.0f);
 	spotLight_S2.color = Vec3(1.f, 1.f, 1.f);
 	spotLight_S2.intensity = 1.;
-	addPointLight(spotLight_S2);
+	addLight(spotLight_S2);
 
 	LightParams spotLight_S3;
 	spotLight_S3.type = L_SPOT;
-	spotLight_S3.position = Vec3(0.0f, 3.0f, 0.0f);
+	spotLight_S3.position = Vec3(0.0f, 6.0f, 0.0f);
 	spotLight_S3.color = Vec3(1.f, 1.f, 1.f);
 	spotLight_S3.intensity = 1.;
-	addPointLight(spotLight_S3);
+	addLight(spotLight_S3);
 
 	LightParams spotLight_S4;
 	spotLight_S4.type = L_SPOT;
-	spotLight_S4.position = Vec3(0.0f, 3.0f, -15.0f);
+	spotLight_S4.position = Vec3(0.0f, 6.0f, -15.0f);
 	spotLight_S4.color = Vec3(1.f, 1.f, 1.f);
 	spotLight_S4.intensity = 1.;
-	addPointLight(spotLight_S4);
+	addLight(spotLight_S4);
 
 
 	// Point Lights
@@ -322,56 +400,56 @@ void SetupSceneLighting()
 	pointLight_L1.position = Vec3(-4.0f, 5.0f, 30.0f);
 	pointLight_L1.color = Vec3(0.5f, 0.7f, 0.2f);
 	pointLight_L1.intensity = 0.8f;
-	addPointLight(pointLight_L1);
+	addLight(pointLight_L1);
 
 	LightParams pointLight_R1;
 	pointLight_R1.type = L_POINT;
 	pointLight_R1.position = Vec3(4.0f, 5.0f, 10.0f);
 	pointLight_R1.color = Vec3(0.7f, 0.5f, 0.2f);
 	pointLight_R1.intensity = 0.8f;
-	addPointLight(pointLight_R1);
+	addLight(pointLight_R1);
 
 	LightParams pointLight_L2;
 	pointLight_L2.type = L_POINT;
 	pointLight_L2.position = Vec3(-4.0f, 5.0f, -10.0f);
 	pointLight_L2.color = Vec3(0.5f, 0.7f, 0.2f);
 	pointLight_L2.intensity = 0.8f;
-	addPointLight(pointLight_L2);
+	addLight(pointLight_L2);
 
 	LightParams pointLight_R2;
 	pointLight_R2.type = L_POINT;
 	pointLight_R2.position = Vec3(4.0f, 5.0f, -30.0f);
 	pointLight_R2.color = Vec3(0.7f, 0.5f, 0.2f);
 	pointLight_R2.intensity = 0.8f;
-	addPointLight(pointLight_R2);
+	addLight(pointLight_R2);
 
 	LightParams pointLight_L3;
 	pointLight_L3.type = L_POINT;
 	pointLight_L3.position = Vec3(-4.0f, 5.0f, -50.0f);
 	pointLight_L3.color = Vec3(0.5f, 0.7f, 0.2f);
 	pointLight_L3.intensity = 0.8f;
-	addPointLight(pointLight_L3);
+	addLight(pointLight_L3);
 
 	LightParams pointLight_R3;
 	pointLight_R3.type = L_POINT;
 	pointLight_R3.position = Vec3(4.0f, 5.0f, -70.0f);
 	pointLight_R3.color = Vec3(0.7f, 0.5f, 0.2f);
 	pointLight_R3.intensity = 0.8f;
-	addPointLight(pointLight_R3);
+	addLight(pointLight_R3);
 
 	LightParams pointLight_L4;
 	pointLight_L4.type = L_POINT;
 	pointLight_L4.position = Vec3(-4.0f, 5.0f, -90.0f);
 	pointLight_L4.color = Vec3(0.5f, 0.7f, 0.2f);
 	pointLight_L4.intensity = 0.8f;
-	addPointLight(pointLight_L4);
+	addLight(pointLight_L4);
 
 	LightParams pointLight_R4;
 	pointLight_R4.type = L_POINT;
 	pointLight_R4.position = Vec3(4.0f, 5.0f, -110.0f);
 	pointLight_R4.color = Vec3(0.7f, 0.5f, 0.2f);
 	pointLight_R4.intensity = 0.8f;
-	addPointLight(pointLight_R4);
+	addLight(pointLight_R4);
 }
 
 void SetupFloorLayout()
@@ -386,7 +464,7 @@ void SetupFloorLayout()
 	// boxRenderer 1
 	boxRenderers.push_back(graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE_LIT,
 			Vec3(0.0f, -2.0f, -65.0f),	// Position
-			Vec3(6.0f, 0.2f, 50.0f),	// Size
+			Vec3(25.0f, 0.2f, 25.0f),	// Size
 			Vec3(GetRandomColor()),		// Color
 			TEXTURED_LIT_VS_PATH, TEXTURED_LIT_FS_PATH));
 	
@@ -493,10 +571,14 @@ void SetupFloorLayout()
 		boxGeomery.center = boxPosition;
 		boxGeomery.halfExtents = graphics->GetMeshRendererScale(boxRenderers[i]) * 0.5f;
 
-		boxVolumes.push_back(physics->CreateRigidbody(BodyType::B_BOX, boxPosition, 0.0f));
+		boxVolumes.push_back(physics->CreateRigidbody(BodyType::B_BOX, boxPosition, 0.0f, 0.9f, 0.2f));
 		physics->SetRigidbodyBoxHalfExtents(boxVolumes[i], boxGeomery.halfExtents);
 		physics->SetRigidbodyBoxCenter(boxVolumes[i], boxGeomery.center);
 	}
+
+	// TO TEST
+	Quaternion boxRot = CoreMath::FromEuler(0, 0, 0);;
+	physics->SetRigidbodyOrientation(boxVolumes[0], boxRot);
 }
 
 float GetRandomColor()

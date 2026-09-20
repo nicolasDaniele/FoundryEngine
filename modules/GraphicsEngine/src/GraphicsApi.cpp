@@ -192,6 +192,28 @@ void Graphics::UpdateMeshRendererPosition(MeshRendererHandle meshHandle, Vec3 ne
     MRSlots[meshHandle.index].renderer->SetPosition(newPosition);
 }
 
+void Graphics::SetMeshRendererRotation(MeshRendererHandle meshHandle, Quaternion rotation)
+{
+	if (!IsValidMeshRenderer(meshHandle))
+	{
+		std::cout << "[GraphicsEngine] Invalid MeshRendererHandle." << std::endl;
+		return;
+	}
+
+	MRSlots[meshHandle.index].renderer->SetRotation(rotation);
+}
+
+Quaternion Graphics::GetMeshRendererRotation(MeshRendererHandle meshHandle)
+{
+	if (!IsValidMeshRenderer(meshHandle))
+	{
+		std::cout << "[GraphicsEngine] Invalid MeshRendererHandle." << std::endl;
+		return Quaternion();
+	}
+
+	return MRSlots[meshHandle.index].renderer->GetRotation();
+}
+
 int Graphics::LoadTextureToMeshRenderer(const char *textureFilePath, MeshRendererHandle meshHandle)
 {
 	if (!IsValidMeshRenderer(meshHandle))

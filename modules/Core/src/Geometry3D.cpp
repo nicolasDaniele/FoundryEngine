@@ -109,11 +109,17 @@ namespace CoreGeometry
 
 		for (int i = 0; i < 3; ++i)
 		{
-			const float* orientation = &obb.orientation.asArray[i * 3];
+			// FIXED: this used to take a pointer already offset by i*3 and
+			// then read [0],[3],[6] off of it - for i=1 that reads
+			// asArray[3],[6],[9], and asArray[9] is one past the end of a
+			// 9-float array (out-of-bounds read). It also didn't extract an
+			// axis correctly even for i=0. ClosestPoint(OBB,...) and
+			// GetInterval(OBB,...) below already do this the right way
+			// (three contiguous floats starting at i*3) - this now matches them.
 			Vec3 axis(
-				orientation[0],
-				orientation[3],
-				orientation[6]);
+				obb.orientation.asArray[i * 3 + 0],
+				obb.orientation.asArray[i * 3 + 1],
+				obb.orientation.asArray[i * 3 + 2]);
 
 			float distance = Dot(dir, axis);
 			if (distance > obb.halfExtents.asArray[i])

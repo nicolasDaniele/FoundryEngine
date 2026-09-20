@@ -7,6 +7,7 @@
 #endif
 
 #include "Core/Vectors.h"
+#include "Core/Quaternions.h"
 #include "EngineInterfaces/PhysicsTypes.h"
 
 /// Lightweight handle used to reference a Rigidbody.
@@ -24,6 +25,7 @@ struct RigidbodyHandle
 
 using Vec3 = CoreMath::Vec3;
 using Mat3 = CoreMath::Mat3;
+using Quaternion = CoreMath::Quaternion;
 
 class ICollisionListener;
 
@@ -40,15 +42,10 @@ public:
 	///
 	/// @param bodyType Type of Rigidbody (see PhysicsTypes).
 	/// @param position Initial world position.
-	/// @param mass Amount of mass for the Rigidbody.
-	/// @param friction Amount of friction for the Rigidbody.
-	/// @param restitution Coefficient of restitution for the Rigidbody.
+	/// @param mass Amount of mass for the Rigidbody. Can be changed later via SetRigidbodyMass.
+	/// @param friction Amount of friction for the Rigidbody. Can be changed later via SetRigidbodyFriction.
+	/// @param restitution Coefficient of restitution for the Rigidbody. Can be changed later via SetRigidbodyRestitution.
 	/// @return RigidbodyHandle used to reference the object.
-	///
-	///  NOTE:
-	/// Friction and restitution are not fully implemented yet.
-	/// These parameters are currently ignored in the simulation.
-	/// Planned for future updates.
     virtual RigidbodyHandle CreateRigidbody(BodyType bodyType, const Vec3& position,
 		float mass = 1.0f, float friction = 0.6f, float restitution = 0.5f) = 0;
 
@@ -67,6 +64,15 @@ public:
 	/// Sets the center of a Rigidbody's Sphere collider.
 	/// If the handle is invalid or the Rigidbody's type is not a Sphere, the call is ignored.
 	virtual void SetRigidbodySphereCenter(RigidbodyHandle rbHandle, const Vec3& center) = 0;
+	/// Sets a Sphere Rigidbody's rolling resistance: a strength value
+	/// (0.0 = none, 1.0 = fully stops rotation every frame) applied to
+	/// angular velocity only while the Rigidbody is touching something.
+	/// Distinct from friction (which only opposes slip while it's happening)
+	/// and from angular damping (which acts unconditionally, in the air too).
+	/// Defaults to 0.0 (a sphere rolls without ever losing angular velocity
+	/// from this) until explicitly set. Values outside [0,1] are clamped.
+	/// If the handle is invalid or the Rigidbody's type is not a Sphere, the call is ignored.
+	virtual void SetRigidbodySphereRollingResistance(RigidbodyHandle rbHandle, float rollingResistance) = 0;
 	
 	/// Returns the current position of a Rigidbody.
 	/// If the handle is invalid, returns Vec3(0.0f).
@@ -77,6 +83,59 @@ public:
 	/// Set the linear velocity of a Rigidbody.
 	/// If the handle is invalid, the call is ignored.
 	virtual void SetRigidbodyLinearVelocity(RigidbodyHandle rbHandle, const Vec3& velocity) = 0;
+
+	/// Sets a Rigidbody's mass. Recomputes its local inertia tensor, same as
+	/// changing a Box's half extents or a Sphere's radius does.
+	/// If the handle is invalid, the call is ignored.
+	virtual void SetRigidbodyMass(RigidbodyHandle rbHandle, float mass) = 0;
+	/// Sets a Rigidbody's friction coefficient (used in Coulomb friction -
+	/// only opposes slip at a contact point; see SetRigidbodySphereRollingResistance
+	/// for what keeps a sphere from rolling forever once it stops slipping).
+	/// If the handle is invalid, the call is ignored.
+	virtual void SetRigidbodyFriction(RigidbodyHandle rbHandle, float friction) = 0;
+	/// Sets a Rigidbody's restitution (bounciness) coefficient.
+	/// If the handle is invalid, the call is ignored.
+	virtual void SetRigidbodyRestitution(RigidbodyHandle rbHandle, float restitution) = 0;
+	/// Sets a Rigidbody's linear damping: a strength value (0.0 = none,
+	/// 1.0 = fully stops linear motion every frame). Applied every frame,
+	/// regardless of contact - this also competes with gravity every frame,
+	/// so it's meant as a mild numerical stabilizer, not a "drag" dial.
+	/// Values outside [0,1] are clamped.
+	/// If the handle is invalid, the call is ignored.
+	virtual void SetRigidbodyDamping(RigidbodyHandle rbHandle, float damping) = 0;
+	/// Sets a Rigidbody's angular damping: a strength value (0.0 = none,
+	/// 1.0 = fully stops rotation every frame). Applied every frame
+	/// regardless of contact, unlike rolling resistance. Values outside
+	/// [0,1] are clamped.
+	/// If the handle is invalid, the call is ignored.
+	virtual void SetRigidbodyAngularDamping(RigidbodyHandle rbHandle, float angularDamping) = 0;
+
+	/// Returns the current orientation of a Rigidbody.
+	/// If the handle is invalid, returns the identity quaternion.
+	virtual Quaternion GetRigidbodyOrientation(RigidbodyHandle rbHandle) = 0;
+	/// Sets the orientation of a Rigidbody. Does not immediately resync the
+	/// collision volume or the world inertia tensor - both catch up on the
+	/// next Update(), same as SetRigidbodyPosition already behaves.
+	/// If the handle is invalid, the call is ignored.
+	virtual void SetRigidbodyOrientation(RigidbodyHandle rbHandle, const Quaternion& orientation) = 0;
+	/// Sets the angular velocity of a Rigidbody.
+	/// If the handle is invalid, the call is ignored.
+	virtual void SetRigidbodyAngularVelocity(RigidbodyHandle rbHandle, const Vec3& angularVelocity) = 0;
+	/// Adds a continuous torque to a Rigidbody, accumulated until the next
+	/// Update() call (same accumulate-then-clear lifecycle as
+	/// AddLinearImpulseToRigidbody's underlying force accumulation).
+	/// If the handle is invalid, the call is ignored.
+	virtual void AddTorqueToRigidbody(RigidbodyHandle rbHandle, const Vec3& torque) = 0;
+	/// Adds an instantaneous rotational impulse to the given RigidbodyHandle,
+	/// as if it were struck at `point` (in world space) with `impulse`.
+	/// Not part of the automatic collision-resolution cycle - this is a
+	/// standalone tool for gameplay code to call directly (e.g. an explosion,
+	/// a power-up, a scripted hit).
+	/// If the handle is invalid, the call is ignored.
+	/// @param rbHandle The handle of the Rigidbody to add the impulse to.
+	/// @param point World-space point where the impulse is applied.
+	/// @param impulse The impulse vector to apply at that point.
+	virtual void AddRotationalImpulseToRigidbody(RigidbodyHandle rbHandle, const Vec3& point, const Vec3& impulse) = 0;
 	
 	/// Adds a collision listener to the given RigidbodyHandle.
 	///

@@ -52,10 +52,23 @@ public:
 	void SetRigidbodyBoxOrientation(RigidbodyHandle rbHandle, const Mat3& orientation) override;
 	void SetRigidbodySphereRadius(RigidbodyHandle rbHandle, const float radius) override;
 	void SetRigidbodySphereCenter(RigidbodyHandle rbHandle, const Vec3& center) override;
+	void SetRigidbodySphereRollingResistance(RigidbodyHandle rbHandle, float rollingResistance) override;
 
 	Vec3 GetRigidbodyPosition(RigidbodyHandle rbHandle) override;
 	void SetRigidbodyPosition(RigidbodyHandle rbHandle, const Vec3& position) override;
 	void SetRigidbodyLinearVelocity(RigidbodyHandle rbHandle, const Vec3& velocity) override;
+
+	void SetRigidbodyMass(RigidbodyHandle rbHandle, float mass) override;
+	void SetRigidbodyFriction(RigidbodyHandle rbHandle, float friction) override;
+	void SetRigidbodyRestitution(RigidbodyHandle rbHandle, float restitution) override;
+	void SetRigidbodyDamping(RigidbodyHandle rbHandle, float damping) override;
+	void SetRigidbodyAngularDamping(RigidbodyHandle rbHandle, float angularDamping) override;
+
+	Quaternion GetRigidbodyOrientation(RigidbodyHandle rbHandle) override;
+	void SetRigidbodyOrientation(RigidbodyHandle rbHandle, const Quaternion& orientation) override;
+	void SetRigidbodyAngularVelocity(RigidbodyHandle rbHandle, const Vec3& angularVelocity) override;
+	void AddTorqueToRigidbody(RigidbodyHandle rbHandle, const Vec3& torque) override;
+	void AddRotationalImpulseToRigidbody(RigidbodyHandle rbHandle, const Vec3& point, const Vec3& impulse) override;
 
 	void AddCollisionListenerToRigidbody(RigidbodyHandle rbHandle, ICollisionListener* listener) override;
 	void AddLinearImpulseToRigidbody(RigidbodyHandle rbHandle, const Vec3& impulse) override;

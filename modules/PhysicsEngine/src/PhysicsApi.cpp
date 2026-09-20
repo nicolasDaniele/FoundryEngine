@@ -117,6 +117,14 @@ void Physics::SetRigidbodySphereCenter(RigidbodyHandle rbHandle, const Vec3& cen
 	volume->SetSphereCenter(center);
 }
 
+void Physics::SetRigidbodySphereRollingResistance(RigidbodyHandle rbHandle, float rollingResistance)
+{
+	auto* volume = GetVolume(rbHandle);
+	if (!volume || volume->bodyType != BodyType::B_SPHERE) return;
+
+	volume->SetRollingResistance(rollingResistance);
+}
+
 Vec3 Physics::GetRigidbodyPosition(RigidbodyHandle rbHandle)
 {
 	if(!IsValidRigidbodyHandle(rbHandle))
@@ -157,6 +165,86 @@ void Physics::SetRigidbodyLinearVelocity(RigidbodyHandle rbHandle, const Vec3& v
 	if (!rb) return;
 
 	rb->SetVelocity(velocity);
+}
+
+void Physics::SetRigidbodyMass(RigidbodyHandle rbHandle, float mass)
+{
+	auto* volume = GetVolume(rbHandle);
+	if (!volume) return;
+
+	volume->SetMass(mass);
+}
+
+void Physics::SetRigidbodyFriction(RigidbodyHandle rbHandle, float friction)
+{
+	auto* volume = GetVolume(rbHandle);
+	if (!volume) return;
+
+	volume->SetFriction(friction);
+}
+
+void Physics::SetRigidbodyRestitution(RigidbodyHandle rbHandle, float restitution)
+{
+	auto* volume = GetVolume(rbHandle);
+	if (!volume) return;
+
+	volume->SetRestitution(restitution);
+}
+
+void Physics::SetRigidbodyDamping(RigidbodyHandle rbHandle, float damping)
+{
+	auto* volume = GetVolume(rbHandle);
+	if (!volume) return;
+
+	volume->SetDamping(damping);
+}
+
+void Physics::SetRigidbodyAngularDamping(RigidbodyHandle rbHandle, float angularDamping)
+{
+	auto* volume = GetVolume(rbHandle);
+	if (!volume) return;
+
+	volume->SetAngularDamping(angularDamping);
+}
+
+Quaternion Physics::GetRigidbodyOrientation(RigidbodyHandle rbHandle)
+{
+	auto* volume = GetVolume(rbHandle);
+	if (!volume) return Quaternion();
+
+	return volume->GetOrientation();
+}
+
+void Physics::SetRigidbodyOrientation(RigidbodyHandle rbHandle, const Quaternion& orientation)
+{
+	auto* volume = GetVolume(rbHandle);
+	if (!volume) return;
+
+	volume->SetOrientation(orientation);
+}
+
+void Physics::SetRigidbodyAngularVelocity(RigidbodyHandle rbHandle, const Vec3& angularVelocity)
+{
+	auto* volume = GetVolume(rbHandle);
+	if (!volume) return;
+
+	volume->SetAngularVelocity(angularVelocity);
+}
+
+void Physics::AddTorqueToRigidbody(RigidbodyHandle rbHandle, const Vec3& torque)
+{
+	auto* volume = GetVolume(rbHandle);
+	if (!volume) return;
+
+	volume->AddTorque(torque);
+}
+
+void Physics::AddRotationalImpulseToRigidbody(RigidbodyHandle rbHandle, const Vec3& point, const Vec3& impulse)
+{
+	auto* volume = GetVolume(rbHandle);
+	if (!volume) return;
+
+	volume->AddRotationalImpulse(point, impulse);
 }
 
 void Physics::AddCollisionListenerToRigidbody(RigidbodyHandle rbHandle, ICollisionListener* listener)

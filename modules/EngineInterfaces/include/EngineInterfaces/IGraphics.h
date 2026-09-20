@@ -8,6 +8,7 @@
 
 #include "Core/Vectors.h"
 #include "Core/Matrices.h"
+#include "Core/Quaternions.h"
 #include "Core/Utils.h"
 #include "GraphicsTypes.h"
 #include "GraphicsPublicData.h"
@@ -15,6 +16,7 @@
 using Vec2 = CoreMath::Vec2;
 using Vec3 = CoreMath::Vec3;
 using Mat4 = CoreMath::Mat4;
+using Quaternion = CoreMath::Quaternion;
 
 /// Lightweight handle used to reference a MeshRenderer.
 ///
@@ -66,6 +68,12 @@ public:
 	/// Updates the position of a MeshRenderer.
 	/// If the handle is invalid, the call is ignored.
 	virtual void UpdateMeshRendererPosition(MeshRendererHandle meshHandle, Vec3 newPosition) = 0;
+	/// Sets the rotation of a MeshRenderer.
+	/// If the handle is invalid, the call is ignored.
+	virtual void SetMeshRendererRotation(MeshRendererHandle meshHandle, Quaternion rotation) = 0;
+	/// Returns a MeshRenderer's current rotation.
+	/// If the handle is invalid, returns the identity quaternion.
+	virtual Quaternion GetMeshRendererRotation(MeshRendererHandle meshHandle) = 0;
 	/// Loads a texture from the given path and sets it to a MeshRenderer.
 	/// If the handle is invalid or the texture cannot be found, 
 	/// the call is ignored and the function returns -1.

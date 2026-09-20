@@ -67,6 +67,8 @@ public:
 	
 	void DestroyMeshRenderer(MeshRendererHandle meshHandle);
 	void UpdateMeshRendererPosition(MeshRendererHandle meshHandle, Vec3 newPosition) override;
+	void SetMeshRendererRotation(MeshRendererHandle meshHandle, Quaternion rotation) override;
+	Quaternion GetMeshRendererRotation(MeshRendererHandle meshHandle) override;
 	int LoadTextureToMeshRenderer(const char* textureFileName, MeshRendererHandle meshHandle) override;
 	void SetTextureTilingToMeshRenderer(MeshRendererHandle meshHandle, Vec2 tiling) override;
 	void SetMeshRendererMaterial(MeshRendererHandle meshHandle, Material material) override;

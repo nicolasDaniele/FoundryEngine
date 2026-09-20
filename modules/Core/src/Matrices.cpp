@@ -6,11 +6,12 @@ namespace CoreMath
 	void Transpose(const float* srcMat, float* dstMat,
 		int srcCols, int srcRows)
 	{
-		for (int i = 0; i < srcCols * srcRows; i++)
+		for (int c = 0; c < srcCols; c++)
 		{
-			int col = i % srcCols;
-			int row = i / srcCols;
-			dstMat[i] = srcMat[srcRows * row + col];
+			for (int r = 0; r < srcRows; r++)
+			{
+				dstMat[r * srcCols + c] = srcMat[c * srcRows + r];
+			}
 		}
 	}
 
@@ -364,9 +365,9 @@ namespace CoreMath
 
 	Mat4 Rotation(float pitch, float yaw, float roll)
 	{
-		return ZRotation(roll) *
+		return YRotation(yaw) *
 			XRotation(pitch) *
-			YRotation(yaw);
+			ZRotation(roll);
 	}
 
 	Mat3 Rotation3x3(float pitch, float yaw, float roll)
@@ -493,29 +494,45 @@ namespace CoreMath
 
 	Vec3 MultiplyMat4Point(const Mat4& mat, const Vec3& vec)
 	{
+		// FIXED: previously read _14/_24/_34 (always 0 for every matrix this
+		// engine builds - Translation/Scale/rotation never touch that row)
+		// and used _11,_12,_13 (etc.) as if they were a row instead of a
+		// column, silently discarding any actual translation and computing
+		// the wrong linear part besides. Reads _41/_42/_43 now - where
+		// Translation() actually writes the translation - and follows the
+		// same column-major convention already verified against OpenGL via
+		// Translation/Projection.
 		return Vec3(
-			mat._11 * vec.x + mat._12 * vec.y + mat._13 * vec.z + mat._14,
-			mat._21 * vec.x + mat._22 * vec.y + mat._23 * vec.z + mat._24,
-			mat._31 * vec.x + mat._32 * vec.y + mat._33 * vec.z + mat._34
+			mat._11 * vec.x + mat._21 * vec.y + mat._31 * vec.z + mat._41,
+			mat._12 * vec.x + mat._22 * vec.y + mat._32 * vec.z + mat._42,
+			mat._13 * vec.x + mat._23 * vec.y + mat._33 * vec.z + mat._43
 		);
-
 	}
 
 	Vec3 MultiplyMat4Vec3(const Mat4& mat, const Vec3& vec)
 	{
+		// FIXED: same convention correction as MultiplyMat4Point, minus the
+		// translation term (this is meant for direction vectors, which
+		// should not be translated).
 		return Vec3(
-			mat._11 * vec.x + mat._12 * vec.y + mat._13 * vec.z,
-			mat._21 * vec.x + mat._22 * vec.y + mat._23 * vec.z,
-			mat._31 * vec.x + mat._32 * vec.y + mat._33 * vec.z
+			mat._11 * vec.x + mat._21 * vec.y + mat._31 * vec.z,
+			mat._12 * vec.x + mat._22 * vec.y + mat._32 * vec.z,
+			mat._13 * vec.x + mat._23 * vec.y + mat._33 * vec.z
 		);
 	}
 
 	Vec3 MultiplyMat3Vec3(const Mat3& mat, const Vec3& vec)
 	{
+		// FIXED: previously used _11,_12,_13 (etc.) as a row instead of a
+		// column - equivalent to computing Mᵀ*v instead of M*v. Every
+		// current call site (RigidbodyVolume's world inertia tensor,
+		// which is R*D*Rᵀ and therefore always symmetric) is unaffected by
+		// this fix, since Mᵀ==M for a symmetric matrix - this only matters
+		// once a non-symmetric Mat3 (e.g. box.orientation) is ever passed in.
 		return Vec3(
-			mat._11 * vec.x + mat._12 * vec.y + mat._13 * vec.z,
-			mat._21 * vec.x + mat._22 * vec.y + mat._23 * vec.z,
-			mat._31 * vec.x + mat._32 * vec.y + mat._33 * vec.z
+			mat._11 * vec.x + mat._21 * vec.y + mat._31 * vec.z,
+			mat._12 * vec.x + mat._22 * vec.y + mat._32 * vec.z,
+			mat._13 * vec.x + mat._23 * vec.y + mat._33 * vec.z
 		);
 	}
 

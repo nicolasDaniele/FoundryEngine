@@ -10,11 +10,11 @@ namespace
 	// matrix's upper-left 3x3) as a column-major 3x3 array, ready for
 	// glUniformMatrix3fv with transpose = GL_FALSE.
 	//
-	// This is a general-purpose 3x3 inverse-transpose, not a shortcut tied to
-	// today's translation+scale-only transforms. That means MeshRenderer does
-	// not need any changes here once rotation support is added later - it
-	// will keep producing correct normals for any combination of rotation
-	// and non-uniform scale.
+	// This is a general-purpose 3x3 inverse-transpose, written independently
+	// of CoreMath::Inverse/Transpose (deliberately, to avoid depending on
+	// internals that hadn't been verified at the time). It already handles
+	// rotation and non-uniform scale correctly with no changes needed now
+	// that MeshRenderer actually has a rotation.
 	void ComputeNormalMatrix3x3(const Mat4& model, float outNormalMatrix[9])
 	{
 		// Upper-left 3x3 of a column-major Mat4 (matches how model is already
@@ -103,8 +103,9 @@ void MeshRenderer::Draw(const Mat4& vp)
 	if (hasChanged)
 	{
 		Mat4 translationMat = CoreMath::Translation(position);
+		Mat4 rotationMat = CoreMath::ToMat4(rotation);
 		Mat4 scaleMat = CoreMath::Scale(scale);
-		modelMat = translationMat * scaleMat;
+		modelMat = translationMat * rotationMat * scaleMat;
 
 		if (IsLit())
 			UpdateNormalMatrix();
@@ -176,6 +177,11 @@ Vec3 MeshRenderer::GetScale() const
 	return scale;
 }
 
+Quaternion MeshRenderer::GetRotation() const
+{
+	return rotation;
+}
+
 void MeshRenderer::SetPosition(const Vec3& _position)
 {
 	position = _position;
@@ -185,5 +191,11 @@ void MeshRenderer::SetPosition(const Vec3& _position)
 void MeshRenderer::SetScale(const Vec3& _scale)
 {
 	scale = _scale;
+	hasChanged = true;
+}
+
+void MeshRenderer::SetRotation(const Quaternion& _rotation)
+{
+	rotation = _rotation;
 	hasChanged = true;
 }
