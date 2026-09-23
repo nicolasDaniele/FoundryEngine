@@ -55,7 +55,16 @@ public:
 	/// Sets the center of a Rigidbody's Box collider.
 	/// If the handle is invalid or the Rigidbody's type is not a Box, the call is ignored.
 	virtual void SetRigidbodyBoxCenter(RigidbodyHandle rbHandle, const Vec3& center) = 0;
-	/// Sets the orientation of a Rigidbody's Box collider.
+	/// Sets the orientation of a Rigidbody's Box collider directly.
+	/// WARNING: this sets the collider's cached Mat3 only - it does NOT
+	/// touch the Rigidbody's actual orientation (the Quaternion driving
+	/// simulation). SynchCollisionVolumes() re-derives this Mat3 from that
+	/// Quaternion every physics step, so whatever you set here gets
+	/// overwritten on the very next Update() unless the Quaternion matches
+	/// (or is never touched). To give a box an initial or new orientation
+	/// that actually persists, use SetRigidbodyOrientation instead - this
+	/// call is only for the rare case of setting the collider's shape
+	/// directly without going through simulation.
 	/// If the handle is invalid or the Rigidbody's type is not a Box, the call is ignored.
 	virtual void SetRigidbodyBoxOrientation(RigidbodyHandle rbHandle, const Mat3& orientation) = 0;
 	/// Sets the radius of a Rigidbody's Sphere collider.
@@ -136,6 +145,16 @@ public:
 	/// @param point World-space point where the impulse is applied.
 	/// @param impulse The impulse vector to apply at that point.
 	virtual void AddRotationalImpulseToRigidbody(RigidbodyHandle rbHandle, const Vec3& point, const Vec3& impulse) = 0;
+	/// Locks rotation on any combination of WORLD axes (not local to the
+	/// Rigidbody's own orientation - same space every other angular API here
+	/// uses) for a Rigidbody. A locked axis's angular velocity is zeroed
+	/// every physics step, so torque or collision-driven spin on that axis
+	/// never turns into visible rotation, while unlocked axes keep rotating
+	/// normally. true = locked/frozen (Unity's "Freeze Rotation" convention).
+	/// Useful for letting an object be pushed around without ever tipping
+	/// over on some axis.
+	/// If the handle is invalid, the call is ignored.
+	virtual void SetRigidbodyRotationLock(RigidbodyHandle rbHandle, bool lockX, bool lockY, bool lockZ) = 0;
 	
 	/// Adds a collision listener to the given RigidbodyHandle.
 	///

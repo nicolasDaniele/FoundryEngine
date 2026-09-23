@@ -83,6 +83,22 @@ public:
 	// same pattern as SetBoxHalfExtents/SetSphereRadius being type-specific there.
 	inline void SetRollingResistance(float newRollingResistance) { rollingResistance = newRollingResistance; }
 
+	// Locks rotation on any combination of WORLD axes (not local to the
+	// body's own orientation - same space AddTorque/SetAngularVelocity/
+	// AddRotationalImpulse already use). A locked axis's angular velocity is
+	// zeroed every physics step (see IntegrateVelocity), so torque or
+	// collision-driven spin on that axis never turns into visible rotation.
+	// true = locked/frozen (matches Unity's "Freeze Rotation" checkboxes),
+	// deliberately not a 0/1 float like damping - that inverted convention
+	// was confusing enough once already.
+	inline void SetRotationLock(bool lockX, bool lockY, bool lockZ)
+	{
+		rotationFreeMask = Vec3(lockX ? 0.0f : 1.0f, lockY ? 0.0f : 1.0f, lockZ ? 0.0f : 1.0f);
+	}
+	inline bool GetRotationLockX() const { return rotationFreeMask.x == 0.0f; }
+	inline bool GetRotationLockY() const { return rotationFreeMask.y == 0.0f; }
+	inline bool GetRotationLockZ() const { return rotationFreeMask.z == 0.0f; }
+
 protected:
 	float restitution;
 	float friction;
@@ -92,6 +108,7 @@ protected:
 	float damping;           // 0 = none, 1 = zeroes linear velocity every frame
 	float angularDamping;    // 0 = none, 1 = zeroes angular velocity every frame
 	float rollingResistance; // 0 = none, 1 = zeroes angular velocity every frame while rolling; only applied to B_SPHERE
+	Vec3 rotationFreeMask = Vec3(1.0f, 1.0f, 1.0f); // 1 = free to rotate on that world axis, 0 = locked; see SetRotationLock
 	int contactCount = 0;    // number of currently active collisions this body is part of
 	OBB box;
 	Sphere sphere;

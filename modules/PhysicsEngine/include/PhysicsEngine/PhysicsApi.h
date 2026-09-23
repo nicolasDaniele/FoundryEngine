@@ -69,6 +69,7 @@ public:
 	void SetRigidbodyAngularVelocity(RigidbodyHandle rbHandle, const Vec3& angularVelocity) override;
 	void AddTorqueToRigidbody(RigidbodyHandle rbHandle, const Vec3& torque) override;
 	void AddRotationalImpulseToRigidbody(RigidbodyHandle rbHandle, const Vec3& point, const Vec3& impulse) override;
+	void SetRigidbodyRotationLock(RigidbodyHandle rbHandle, bool lockX, bool lockY, bool lockZ) override;
 
 	void AddCollisionListenerToRigidbody(RigidbodyHandle rbHandle, ICollisionListener* listener) override;
 	void AddLinearImpulseToRigidbody(RigidbodyHandle rbHandle, const Vec3& impulse) override;

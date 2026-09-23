@@ -39,20 +39,15 @@ void PhysicsContext::Update(float frameTime)
 		bodies[i]->ApplyGravityForce();
 
 	for (int i = 0; i < bodies.size(); ++i)
-	{
 		bodies[i]->IntegrateVelocity(frameTime);
-		RigidbodyVolume* rb = (RigidbodyVolume*)bodies[i];
-		if (rb && rb->HasVolume())
-			rb->SynchCollisionVolumes();
-	}
+
+	for (int i = 0; i < bodies.size(); ++i)
+		bodies[i]->IntegratePosition(frameTime);
 
 	DetectCollisions();
 
 	for (int k = 0; k < impulseIteration; ++k)
 		SolveImpulses(frameTime);
-
-	for (int i = 0; i < bodies.size(); ++i)
-		bodies[i]->IntegratePosition(frameTime);
 
 	CorrectPositions();
 
@@ -226,8 +221,8 @@ void PhysicsContext::ApplyImpulses(RigidbodyVolume* body1, RigidbodyVolume* body
 	if (Dot(relativeVel, hitNormal) > 0.0f)
 		return;
 
-	float minRestitution = fminf(body1->GetRestitution(), body2->GetRestitution());
-	float numerator = (-(1.0f + minRestitution) * Dot(relativeVel, hitNormal));
+	float combinedRestitution = (body1->GetRestitution() + body2->GetRestitution()) * 0.5f;
+	float numerator = (-(1.0f + combinedRestitution) * Dot(relativeVel, hitNormal));
 
 	float d1 = invMassSum;
 	Vec3 d2 = Cross(MultiplyMat3Vec3(invTensor1, Cross(dir1, hitNormal)), dir1);

@@ -247,6 +247,14 @@ void Physics::AddRotationalImpulseToRigidbody(RigidbodyHandle rbHandle, const Ve
 	volume->AddRotationalImpulse(point, impulse);
 }
 
+void Physics::SetRigidbodyRotationLock(RigidbodyHandle rbHandle, bool lockX, bool lockY, bool lockZ)
+{
+	auto* volume = GetVolume(rbHandle);
+	if (!volume) return;
+
+	volume->SetRotationLock(lockX, lockY, lockZ);
+}
+
 void Physics::AddCollisionListenerToRigidbody(RigidbodyHandle rbHandle, ICollisionListener* listener)
 {
 	if(!IsValidRigidbodyHandle(rbHandle) || !listener)

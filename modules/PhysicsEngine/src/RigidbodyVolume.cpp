@@ -69,6 +69,13 @@ void RigidbodyVolume::IntegrateVelocity(float frameTime)
 	// touching something.
 	if (bodyType == BodyType::B_SPHERE && contactCount > 0)
 		angVel = angVel * DampingFactor(rollingResistance, frameTime);
+
+	// Per-axis rotation lock: zero angular velocity on any locked world axis,
+	// every frame, regardless of what added angular velocity there this
+	// frame (torque, a collision impulse resolved in SolveImpulses last
+	// frame, a direct AddRotationalImpulse call from gameplay code, etc.).
+	// Applied last and unconditionally so nothing upstream can bypass it.
+	angVel = angVel * rotationFreeMask;
 }
 
 void RigidbodyVolume::IntegratePosition(float frameTime)
