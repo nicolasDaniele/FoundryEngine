@@ -1,7 +1,20 @@
 #pragma once
 
+#include <vector>
+#include "Core/Vectors.h"
+
+using Vec3 = CoreMath::Vec3;
+
 struct RigidbodyHandle;
-struct CollisionData;
+//struct CollisionData;
+
+typedef struct CollisionData
+{
+	bool colliding;
+	Vec3 normal;
+	float depth;
+	std::vector<Vec3> contacts;
+} CollisionData;
 
 /// Interface for receiving collision events.
 /// Implemented by gameplay objects.

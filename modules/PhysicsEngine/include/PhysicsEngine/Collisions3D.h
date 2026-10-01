@@ -3,6 +3,7 @@
 #include <vector>
 #include "Core/Geometry3D.h"
 #include "EngineInterfaces/IPhysics.h"
+#include "EngineInterfaces/PhysicsInterfaces.h"
 
 #define AABBShpere(aabb, sphere)    SphereAABB(sphere, aabb)
 #define OBBShpere(obb, sphere)      SphereOBB(sphere, obb)
@@ -27,6 +28,8 @@ using Plane		= CoreGeometry::Plane;
 using Triangle	= CoreGeometry::Triangle;
 using Interval	= CoreGeometry::Interval;
 
+struct CollisionData;
+
 typedef struct RaycastResult
 {
 	Vec3 point;
@@ -35,13 +38,13 @@ typedef struct RaycastResult
 	bool hit;
 } RaycastResult;
 
-typedef struct CollisionData
-{
-	bool colliding;
-	Vec3 normal;
-	float depth;
-	std::vector<Vec3> contacts;
-} CollisionData;
+//typedef struct CollisionData
+//{
+//	bool colliding;
+//	Vec3 normal;
+//	float depth;
+//	std::vector<Vec3> contacts;
+//} CollisionData;
 
 struct CollisionKey
 {

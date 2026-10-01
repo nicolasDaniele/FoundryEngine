@@ -3,6 +3,7 @@
 #include <vector>
 #include <unordered_map>
 #include "PhysicsEngine/Collisions3D.h"
+#include "EngineInterfaces/PhysicsInterfaces.h"
 
 using OBB = CoreGeometry::OBB;
 

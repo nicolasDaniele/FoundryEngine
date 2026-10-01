@@ -1,5 +1,18 @@
 #pragma once
 
+#include <cstdint>
+
+// Mirrors glad's own typedef (see third_party/glad's generated header)
+// instead of #include-ing the whole <glad/glad.h> here - a consumer of this
+// public interface that only needs handles/types (e.g. GameplayObjects code
+// implementing collision listeners, not making raw GL calls) shouldn't have
+// to pull in every GL function pointer and macro just to see this one
+// function signature (GetGraphicsEngine, below). If glad.h IS also included
+// elsewhere in the same translation unit, this identical redeclaration is
+// legal C++ (repeated typedefs are fine as long as they match) and causes
+// no conflict.
+typedef void* (*GLADloadproc)(const char* name);
+
 #ifdef GRAPHICSENGINE_EXPORTS
 	#define GRAPHICS_API __declspec(dllexport)
 #else
@@ -9,6 +22,7 @@
 #include "Core/Vectors.h"
 #include "Core/Matrices.h"
 #include "Core/Quaternions.h"
+#include "Core/Transform.h"
 #include "Core/Utils.h"
 #include "GraphicsTypes.h"
 #include "GraphicsPublicData.h"
@@ -17,6 +31,7 @@ using Vec2 = CoreMath::Vec2;
 using Vec3 = CoreMath::Vec3;
 using Mat4 = CoreMath::Mat4;
 using Quaternion = CoreMath::Quaternion;
+using Transform = CoreMath::Transform;
 
 /// Lightweight handle used to reference a MeshRenderer.
 ///
@@ -57,14 +72,32 @@ public:
 	/// @param color Color of the MeshRenderer (in RGB channels, with values from 0 to 1).
 	/// @param vertexShaderPath The path to find the vertex shader file for this MeshRenderer.
 	/// @param fragmentShaderPath The path to find the fragment shader file for this MeshRenderer.
+	/// @param rotation Initial rotation. Defaults to identity (no rotation) - added at the
+	/// end of the signature (rather than alongside position/scale) so every existing
+	/// call site keeps compiling unchanged.
 	/// @return MeshRendererHandle used to reference the object.
 	virtual MeshRendererHandle CreateMeshRenderer(MeshType meshType, ShaderType shaderType,
 		Vec3 position = Vec3(0.0f),
 		Vec3 scale = Vec3(1.0f),
 		Vec3 color = Vec3(1.0f),
 		const char* vertexShaderPath = "", 
-		const char* fragmentShaderPath = "") = 0;
+		const char* fragmentShaderPath = "",
+		Quaternion rotation = Quaternion()) = 0;
 
+	/// Sets a MeshRenderer's full transform (position, rotation and scale)
+	/// in a single call - a convenience equivalent to calling
+	/// UpdateMeshRendererPosition, SetMeshRendererRotation and
+	/// SetMeshRendererScale individually.
+	/// If the handle is invalid, the call is ignored.
+	virtual void SetMeshRendererTransform(MeshRendererHandle meshHandle, const Transform& transform) = 0;
+	/// Returns a MeshRenderer's full transform (position, rotation and scale).
+	/// If the handle is invalid, returns a default-constructed Transform (identity).
+	virtual Transform GetMeshRendererTransform(MeshRendererHandle meshHandle) = 0;
+	/// Sets the scale of a MeshRenderer. Previously only exposed at creation
+	/// time (via CreateMeshRenderer) with no way to change it afterward -
+	/// added now alongside SetMeshRendererTransform, which needs it too.
+	/// If the handle is invalid, the call is ignored.
+	virtual void SetMeshRendererScale(MeshRendererHandle meshHandle, Vec3 newScale) = 0;
 	/// Updates the position of a MeshRenderer.
 	/// If the handle is invalid, the call is ignored.
 	virtual void UpdateMeshRendererPosition(MeshRendererHandle meshHandle, Vec3 newPosition) = 0;
@@ -142,7 +175,7 @@ public:
 
 	/// Moves the camera towards a target vector.
 	/// @param target The position to move the camera to.
-	/// @param distance The distance to maintain from the target.
+	/// @param distance Per-axis distance to maintain from the target (x/y/z scale independently - see Camera::Follow).
 	/// @param frameTime Time elapsed since last frame (in seconds).
 	/// @param smoothSpeed Used to smoothly lerp the camra's current position to the target position.
 	virtual void CameraFollow(Vec3 target, float distance, float frameTime, float smoothSpeed) = 0;

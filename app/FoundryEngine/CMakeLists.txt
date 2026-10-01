@@ -1,5 +1,6 @@
 add_executable(FoundryEngine
     App.cpp
+    GameplayObjects/PlayerObject.cpp
 )
 
 set(ENGINE_MODULES GraphicsEngine PhysicsEngine)

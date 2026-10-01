@@ -23,28 +23,33 @@ The project emphasizes:
 ### Graphics Engine
 - OpenGL rendering pipeline
 - Mesh rendering system
-- Shader compilation and management
-- Textured and flat-color materials
-- Camera movement, follow and orbit systems
-- Debug line rendering
+- Shader compilation and management, with automatic shared-define injection (e.g. `MAX_LIGHTS`) so shaders stay in sync with engine-side constants
+- Flat-color and textured materials, each available in lit and unlit variants
+- Blinn-Phong lighting system (directional, point and spot lights), driven by a single per-frame uniform buffer shared across every lit shader
+- Quaternion-based mesh rotation
+- Camera movement, orbit, and a follow system with independently configurable per-axis distance
+- Debug line rendering, including colored debug shapes (e.g. point light gizmos, rotation-aware collider wireframes) kept separate from the default single-color debug batch
 - GPU buffer abstraction (VAO/VBO/EBO)
 
 ### Physics Engine
-- Custom rigidbody system
-- Sphere and OBB collision detection
+- Custom rigidbody system with quaternion-based orientation
+- Sphere and OBB collision detection, rotation-aware
 - Listener-based collision enter/stay/exit events
-- Impulse-based collision resolution
+- Impulse-based collision resolution, including angular response (torque accumulation, cached local inertia tensor rotated into world space)
+- Rolling resistance for spherical rigidbodies (contact-gated, independent from Coulomb friction and from angular damping)
+- Runtime-configurable per-rigidbody mass, friction, restitution, linear damping and angular damping
 - Position correction solver
 
 ---
 
 ## Engine Architecture Features
 - Modular DLL-style engine interfaces
-- Handle-based object referencing
+- Handle-based object referencing, with O(1) free-list reuse of slots
 - Generation-safe slot map storage
 - Separation between public APIs and internal systems
 - RAII and smart pointer ownership
 - Internal collision tracking system
+- Shared math library (`Core`: vectors, matrices, quaternions) used consistently across the Graphics and Physics modules
 
 ---
 
@@ -63,13 +68,17 @@ FoundryEngine
 │   ├── Rendering
 │   ├── MeshBuffers
 │   ├── Shaders
+│   ├── Lighting
 │   └── Camera
 │
 ├── PhysicsEngine
 │   ├── Rigidbody System
 │   ├── Collision Detection
 │   ├── Impulse Solver
-┴   └── Collision Events
+│   └── Collision Events
+│
+┴── Debugger
+    └── Debug Visualization
 ```
 
 ### Handle-Based Object System
@@ -87,11 +96,17 @@ This prevents:
 - invalid object access
 - stale pointers after slot reuse
 
-Internally, objects are stored in slot arrays using smart pointers.
+Internally, objects are stored in slot arrays using smart pointers, with a free list of reusable indices so creating/destroying objects at runtime doesn't require scanning the whole slot array.
 
 ### Physics Pipeline
 The physics simulation currently follows this pipeline:
 ```text
+Apply Forces
+        ↓
+Integrate Velocity
+        ↓
+Integrate Position / Orientation
+        ↓
 Detect Collisions
         ↓
 Solve Collision Impulses
@@ -101,6 +116,8 @@ Correct Penetrations
 Generate Collision Events
 ```
 
+Position and orientation are integrated before collision detection runs, so detection always sees the current frame's actual geometry rather than the previous frame's.
+
 Collision events support:
 - Enter
 - Stay
@@ -109,22 +126,24 @@ Collision events support:
 through listener callbacks.
 
 ### Rendering Pipeline
-- The renderer currently supports:
-- flat colored and textured materials rendering
-- dynamic mesh translation
-- debug rendering
+The renderer currently supports:
+- flat-colored and textured materials, each with lit and unlit variants
+- Blinn-Phong lighting with directional, point, and spot lights
+- dynamic mesh translation, rotation, and scale
+- debug rendering, including per-shape colored debug geometry
 
-Mesh data is uploaded through GPU mesh buffers and rendered using OpenGL draw calls.
+Mesh data is uploaded through GPU mesh buffers and rendered using OpenGL draw calls. Lit shaders read camera and light data from a shared per-frame uniform buffer instead of per-mesh uniforms.
 
 ---
 
 ## Current Demo
 The current demo includes:
-- controllable physics player
-- collision-enabled platforms
-- orbit/follow camera
-- debug visualization
-- textured environment rendering
+- a controllable physics player that rolls and picks up rotation from contact
+- collision-enabled platforms, including a rotatable platform for testing rotation-aware collision
+- an orbit/follow camera with configurable per-axis follow distance
+- lit and textured environment rendering
+- point light visualization via debug gizmos
+- debug visualization (colliders and lights)
 
 ---
 
@@ -184,14 +203,16 @@ FoundryEngine.exe
 ## Current State
 FoundryEngine is currently an experimental in-development project.
 Some systems are still work-in-progress, including:
-- friction/restitution response
-- rigidbody orientation
-- advanced collision stability
+- per-axis rotation locking for rigidbodies (e.g. letting a box be pushed without ever tipping over)
+- simultaneous/warm-started contact solving (the current sequential impulse solver can leave a small torque bias when resolving multiple contact points on the same body in one step)
+- broadphase collision detection
+- advanced collision stability at high angular velocities (continuous collision detection / sub-stepping)
 
 The current demo focuses primarily on:
 - rendering architecture
+- lighting
 - collision detection
-- rigidbody simulation
+- rigidbody simulation, including rotation
 - engine modularity
 - event systems
 
@@ -199,15 +220,12 @@ The current demo focuses primarily on:
 
 ## Planned Features
 ### Physics
-- Proper friction and restitution
-- Angular velocity and torque
-- Rigidbody orientation
 - Broadphase collision detection
 - Raycasting
+- Continuous collision detection / sub-stepping for fast-rotating or fast-moving colliders
 
 ### Graphics
-- Material system
-- Lighting
+- Shadow mapping
 - Model importing
 
 ### Engine

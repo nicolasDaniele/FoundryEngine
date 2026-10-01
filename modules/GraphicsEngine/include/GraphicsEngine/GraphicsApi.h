@@ -63,9 +63,13 @@ public:
 										Vec3 scale = Vec3(1.0f),
 										Vec3 color = Vec3(1.0f),
 										const char* vertexShaderPath = "", 
-										const char* fragmentShaderPath = "") override;
+										const char* fragmentShaderPath = "",
+										Quaternion rotation = Quaternion()) override;
 	
 	void DestroyMeshRenderer(MeshRendererHandle meshHandle);
+	void SetMeshRendererTransform(MeshRendererHandle meshHandle, const Transform& transform) override;
+	Transform GetMeshRendererTransform(MeshRendererHandle meshHandle) override;
+	void SetMeshRendererScale(MeshRendererHandle meshHandle, Vec3 newScale) override;
 	void UpdateMeshRendererPosition(MeshRendererHandle meshHandle, Vec3 newPosition) override;
 	void SetMeshRendererRotation(MeshRendererHandle meshHandle, Quaternion rotation) override;
 	Quaternion GetMeshRendererRotation(MeshRendererHandle meshHandle) override;

@@ -122,7 +122,7 @@ void Graphics::DrawDebugLines(const Vec3* vertices, int vertexCount,
 }
 
 MeshRendererHandle Graphics::CreateMeshRenderer(MeshType meshType, ShaderType shaderType, Vec3 position, Vec3 scale, Vec3 color,
-											  const char *vertexShaderPath, const char *fragmentShaderPath)
+											  const char *vertexShaderPath, const char *fragmentShaderPath, Quaternion rotation)
 {
 	Mesh mesh = MeshFactory::CreateMesh(meshType, color);
 	std::unique_ptr<MeshBuffer> meshBuffer = std::make_unique<MeshBuffer>();
@@ -154,6 +154,7 @@ MeshRendererHandle Graphics::CreateMeshRenderer(MeshType meshType, ShaderType sh
 
 	MRSlots[index].renderer->SetShaderProgram(shaderProgram);
 	MRSlots[index].renderer->InitUniforms();
+	MRSlots[index].renderer->SetRotation(rotation);
 
 	return { index, MRSlots[index].generation };
 }
@@ -190,6 +191,43 @@ void Graphics::UpdateMeshRendererPosition(MeshRendererHandle meshHandle, Vec3 ne
 	}
 
     MRSlots[meshHandle.index].renderer->SetPosition(newPosition);
+}
+
+void Graphics::SetMeshRendererTransform(MeshRendererHandle meshHandle, const Transform& transform)
+{
+	if (!IsValidMeshRenderer(meshHandle))
+	{
+		std::cout << "[GraphicsEngine] Invalid MeshRendererHandle." << std::endl;
+		return;
+	}
+
+	auto& renderer = MRSlots[meshHandle.index].renderer;
+	renderer->SetPosition(transform.position);
+	renderer->SetRotation(transform.rotation);
+	renderer->SetScale(transform.scale);
+}
+
+Transform Graphics::GetMeshRendererTransform(MeshRendererHandle meshHandle)
+{
+	if (!IsValidMeshRenderer(meshHandle))
+	{
+		std::cout << "[GraphicsEngine] Invalid MeshRendererHandle." << std::endl;
+		return Transform();
+	}
+
+	auto& renderer = MRSlots[meshHandle.index].renderer;
+	return Transform(renderer->GetPosition(), renderer->GetRotation(), renderer->GetScale());
+}
+
+void Graphics::SetMeshRendererScale(MeshRendererHandle meshHandle, Vec3 newScale)
+{
+	if (!IsValidMeshRenderer(meshHandle))
+	{
+		std::cout << "[GraphicsEngine] Invalid MeshRendererHandle." << std::endl;
+		return;
+	}
+
+	MRSlots[meshHandle.index].renderer->SetScale(newScale);
 }
 
 void Graphics::SetMeshRendererRotation(MeshRendererHandle meshHandle, Quaternion rotation)

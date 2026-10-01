@@ -3,6 +3,16 @@
 
 namespace CoreMath
 {
+	// FIXED: the previous version of this function was a no-op (identity) for
+	// any square matrix - srcRows*row+col with row=i/srcCols, col=i%srcCols
+	// and srcCols==srcRows always simplifies back to i, so dstMat[i]==srcMat[i]
+	// for every call site in this codebase (Transpose(Mat2/Mat3/Mat4) always
+	// pass equal cols/rows). This went unnoticed because everything that used
+	// Transpose (directly, or via Adjugate/Inverse) only ever operated on
+	// identity or diagonal matrices until rotation was introduced - both are
+	// their own transpose, so the bug was invisible. It stops being invisible
+	// the moment a genuinely non-symmetric matrix (e.g. a rotation matrix)
+	// goes through it, which RigidbodyVolume::UpdateWorldInertiaTensor now does.
 	void Transpose(const float* srcMat, float* dstMat,
 		int srcCols, int srcRows)
 	{
@@ -363,6 +373,12 @@ namespace CoreMath
 		return Vec3(mat._11, mat._22, mat._33);
 	}
 
+	// FIXED: previously composed as ZRotation(roll) * XRotation(pitch) *
+	// YRotation(yaw) - a different axis order than Rotation3x3 (which uses
+	// Y * X * Z). Same semantic name ("Euler rotation"), different result
+	// for the same three angles. Now matches Rotation3x3 and Quaternions.h's
+	// FromEuler, so all three ways of building a rotation from Euler angles
+	// in this library agree. No known call sites depended on the old order.
 	Mat4 Rotation(float pitch, float yaw, float roll)
 	{
 		return YRotation(yaw) *
@@ -536,7 +552,7 @@ namespace CoreMath
 		);
 	}
 
-	Mat4 Transform(const Vec3& scale, const Vec3& eulerRot,
+	Mat4 TRS(const Vec3& scale, const Vec3& eulerRot,
 		const Vec3& translate)
 	{
 		return Translation(translate) *
@@ -544,7 +560,7 @@ namespace CoreMath
 			Scale(scale);
 	}
 
-	Mat4 Transform(const Vec3& scale, const Vec3& rotationAxis,
+	Mat4 TRS(const Vec3& scale, const Vec3& rotationAxis,
 		float rotationAngle, const Vec3& translate)
 	{
 		return Scale(scale) *

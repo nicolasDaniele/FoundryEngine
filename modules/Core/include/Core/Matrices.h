@@ -188,9 +188,16 @@ namespace CoreMath
 	Vec3 MultiplyMat4Vec3(const Mat4& mat, const Vec3& vec);
 	Vec3 MultiplyMat3Vec3(const Mat3& mat, const Vec3& vec);
 
-	Mat4 Transform(const Vec3& scale, const Vec3& eulerRotation, 
+	// Renamed from "Transform" (its original name in this library) to "TRS"
+	// (Translate-Rotate-Scale) to avoid colliding with CoreMath::Transform,
+	// the position+rotation+scale struct added in Core/Transform.h - having
+	// both a type and a free function named "Transform" in the same
+	// namespace breaks name lookup for the type in most contexts (that's
+	// what caused the C4430/C2143/C2065 pile of errors when Transform.h was
+	// first introduced). This function's behavior is unchanged, only the name.
+	Mat4 TRS(const Vec3& scale, const Vec3& eulerRotation, 
 		const Vec3& translate);
-	Mat4 Transform(const Vec3& scale, const Vec3& rotationAxis, 
+	Mat4 TRS(const Vec3& scale, const Vec3& rotationAxis, 
 		float rotationAngle, const Vec3& translate);
 
 	Mat4 LookAt(const Vec3& position, const Vec3& target, const Vec3& up);

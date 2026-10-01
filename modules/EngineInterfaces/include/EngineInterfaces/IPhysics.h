@@ -6,6 +6,7 @@
 	#define PHYSICS_API __declspec(dllimport)
 #endif
 
+#include <cstdint>
 #include "Core/Vectors.h"
 #include "Core/Quaternions.h"
 #include "EngineInterfaces/PhysicsTypes.h"
