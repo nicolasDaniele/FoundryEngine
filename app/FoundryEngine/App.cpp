@@ -11,6 +11,7 @@
 #include "EngineInterfaces/IPhysics.h"
 #include "EngineInterfaces/GraphicsPublicData.h"
 #include "GameplayObjects/PlayerObject.h"
+#include "GameplayObjects/RotatingPlatform.h"
 
 using Vec3 = CoreMath::Vec3;
 using Vec2 = CoreMath::Vec2;
@@ -49,6 +50,7 @@ IPhysics* physics = nullptr;
 float playerSpeed = 10.0f;
 float playerJumpImpulse = 2500.0f;
 PlayerObject* player = nullptr;
+RotatingPlatform* rotatingPlatform = nullptr;
 
 bool drawDebug = true;
 bool tWasPressed = false;
@@ -146,7 +148,7 @@ int main()
 	physics->SetRigidbodyFriction(playerBody, 0.7f);
 	physics->SetRigidbodyDamping(playerBody, 0.1f);
 	physics->SetRigidbodyAngularDamping(playerBody, 0.2f);
-	
+
 	player = new PlayerObject(playerBody, playerRenderer, physics, graphics);
 	if (!player)
 	{
@@ -156,6 +158,49 @@ int main()
 	}
 
 	// ---------------------- End Player Setup ---------------------- \\
+
+
+	// ------------------------ Rotating Platform Setup ------------------------ \\
+
+	Vec3 rotPlatformPosition = Vec3(0.0f, -2.0f, -80.0f);
+	Vec3 rotPlatformSize = Vec3(4.0f, 0.2f, 10.0f);
+
+	MeshRendererHandle rotPlatformRenderer = graphics->CreateMeshRenderer(MeshType::M_CUBE, ShaderType::S_TEXTURE_LIT,
+		rotPlatformPosition, rotPlatformSize,
+		Vec3(0.2f), // Color
+		TEXTURED_LIT_VS_PATH, TEXTURED_LIT_FS_PATH);
+
+	int rotPlatformTexId = graphics->LoadTextureToMeshRenderer(WOOD_TEXTURE_PATH, rotPlatformRenderer);
+	if (rotPlatformTexId == -1)
+	{
+		std::cout << "[App] Texture could not be loaded for platformTexId.\n";
+		std::cin.get();
+		return -1;
+	}
+
+	Material rotPlatformMaterial;
+	rotPlatformMaterial.ambientStrength = 0.15f;
+	rotPlatformMaterial.specularStrength = 0.1f;
+	rotPlatformMaterial.shininess = 10.0f;
+	graphics->SetMeshRendererMaterial(rotPlatformRenderer, rotPlatformMaterial);
+
+
+	RigidbodyHandle rotPlatformBody = physics->CreateRigidbody(BodyType::B_BOX, rotPlatformPosition,
+		0.0f, 0.9f, 0.0f); // mass, friction, restitution
+
+	physics->SetRigidbodyBoxHalfExtents(rotPlatformBody, rotPlatformSize * 0.5f);
+
+	rotatingPlatform = new RotatingPlatform(rotPlatformBody, rotPlatformRenderer, physics, graphics, Vec3(-1.0f, 0.0f, 0.0f));
+	if (!rotatingPlatform)
+	{
+		std::cout << "[App] Rotating Platform is null." << std::endl;
+		std::cin.get();
+		return -1;
+	}
+
+	// ---------------------- End Rotating Platform Setup ---------------------- \\
+
+
 
 	// Level Setup	
 	SetupFloorLayout();
@@ -175,18 +220,16 @@ int main()
 
 		physics->Update(frameTime);		
 		player->Update(frameTime);
+		rotatingPlatform->Update(frameTime);
 
 		if(player->GetPosition().y < -10.0f)
 			player->Reset(playerStartPosition);
 
 
 		// Camera Movement
-		if (player != nullptr)
-		{
-			graphics->CameraFollow(player->GetPosition(), 10.0f, frameTime, 6.0f);
-			if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-				graphics->CameraOrbit(player->GetPosition(), 10.0f, mouseXOffset, mouseYOffset, frameTime, 6.0f);
-		}
+		graphics->CameraFollow(player->GetPosition(), 10.0f, frameTime, 6.0f);
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+			graphics->CameraOrbit(player->GetPosition(), 10.0f, mouseXOffset, mouseYOffset, frameTime, 6.0f);
 		
 		mouseXOffset = 0.0f;
 		mouseYOffset = 0.0f;
@@ -211,6 +254,12 @@ int main()
 					CoreMath::ToMat3(graphics->GetMeshRendererRotation(boxRenderers[i]))
 				});
 			}
+
+			debugRenderer->AddBox({
+					graphics->GetMeshRendererPosition(rotPlatformRenderer),
+					graphics->GetMeshRendererScale(rotPlatformRenderer) * 0.5f,
+					CoreMath::ToMat3(graphics->GetMeshRendererRotation(rotPlatformRenderer))
+				});
 
 			// Point light gizmos: a small wireframe sphere per light, tinted
 			// with the light's own emission color.
@@ -326,22 +375,24 @@ void SetupSceneLighting()
 	spotLight_S2.outerCutOff = 24.f;
 	addLight(spotLight_S2);
 
+
+	// Over the rotating platform
 	LightParams spotLight_S3;
 	spotLight_S3.type = L_SPOT;
-	spotLight_S3.position = Vec3(6.0f, 6.0f, -50.0f);
-	spotLight_S3.color = Vec3(1.f, 1.f, 1.f);
+	spotLight_S3.position = Vec3(0.0f, 4.0f, -80.0f);
+	spotLight_S3.color = Vec3(1.f, 1.f, 0.0f);
 	spotLight_S3.intensity = 1.f;
 	spotLight_S3.cutOff = 20.f;
-	spotLight_S3.outerCutOff = 24.f;
+	spotLight_S3.outerCutOff = 30.f;
 	addLight(spotLight_S3);
 
 	LightParams spotLight_S4;
 	spotLight_S4.type = L_SPOT;
-	spotLight_S4.position = Vec3(-6.0f, 6.0f, -60.0f);
+	spotLight_S4.position = Vec3(0.0f, 2.0f, -80.0f);
 	spotLight_S4.color = Vec3(1.f, 1.f, 1.f);
 	spotLight_S4.intensity = 1.f;
-	spotLight_S4.cutOff = 20.f;
-	spotLight_S4.outerCutOff = 24.f;
+	spotLight_S4.cutOff = 25.f;
+	spotLight_S4.outerCutOff = 28.f;
 	addLight(spotLight_S4);
 
 
@@ -350,14 +401,14 @@ void SetupSceneLighting()
 	pointLight_L1.type = L_POINT;
 	pointLight_L1.position = Vec3(-4.0f, 3.0f, 0.0f);
 	pointLight_L1.color = Vec3(0.5f, 0.7f, 0.2f);
-	pointLight_L1.intensity = 1.0f;
+	pointLight_L1.intensity = 1.5f;
 	addLight(pointLight_L1);
 
 	LightParams pointLight_R1;
 	pointLight_R1.type = L_POINT;
 	pointLight_R1.position = Vec3(4.0f, 3.0f, -5.0f);
 	pointLight_R1.color = Vec3(0.7f, 0.5f, 0.2f);
-	pointLight_R1.intensity = 1.0f;
+	pointLight_R1.intensity = 1.5f;
 	addLight(pointLight_R1);
 
 	LightParams pointLight_L2;
@@ -374,38 +425,46 @@ void SetupSceneLighting()
 	pointLight_R2.intensity = 1.0f;
 	addLight(pointLight_R2);
 
-	//LightParams pointLight_L3;
-	//pointLight_L3.type = L_POINT;
-	//pointLight_L3.position = Vec3(-4.0f, 5.0f, -50.0f);
-	//pointLight_L3.color = Vec3(0.5f, 0.7f, 0.2f);
-	//pointLight_L3.intensity = 0.1f;
-	//addLight(pointLight_L3);
+	LightParams pointLight_L3;
+	pointLight_L3.type = L_POINT;
+	pointLight_L3.position = Vec3(-4.0f, 1.0f, -54.0f);
+	pointLight_L3.color = Vec3(0.1f, 0.1f, 0.9f);
+	pointLight_L3.intensity = 1.5f;
+	addLight(pointLight_L3);
 
-	//LightParams pointLight_R3;
-	//pointLight_R3.type = L_POINT;
-	//pointLight_R3.position = Vec3(4.0f, 5.0f, -70.0f);
-	//pointLight_R3.color = Vec3(0.7f, 0.5f, 0.2f);
-	//pointLight_R3.intensity = 1.0f;
-	//addLight(pointLight_R3);
+	LightParams pointLight_R3;
+	pointLight_R3.type = L_POINT;
+	pointLight_R3.position = Vec3(4.0f, 1.0f, -66.0f);
+	pointLight_R3.color = Vec3(0.6f, 0.8f, 0.1f);
+	pointLight_R3.intensity = 1.5f;
+	addLight(pointLight_R3);
 
-	//LightParams pointLight_L4;
-	//pointLight_L4.type = L_POINT;
-	//pointLight_L4.position = Vec3(-4.0f, 5.0f, -90.0f);
-	//pointLight_L4.color = Vec3(0.5f, 0.7f, 0.2f);
-	//pointLight_L4.intensity = 1.0f;
-	//addLight(pointLight_L4);
 
-	//LightParams pointLight_R4;
-	//pointLight_R4.type = L_POINT;
-	//pointLight_R4.position = Vec3(4.0f, 5.0f, -110.0f);
-	//pointLight_R4.color = Vec3(0.7f, 0.5f, 0.2f);
-	//pointLight_R4.intensity = 1.0f;
-	//addLight(pointLight_R4);
+	// Over GOAL
+	LightParams pointLight_G1;
+	pointLight_G1.type = L_POINT;
+	pointLight_G1.position = Vec3(-10.0f, 3.0f, -100.0f);
+	pointLight_G1.color = Vec3(0.9f, 0.9f, 0.9f);
+	pointLight_G1.intensity = 3.0f;
+	addLight(pointLight_G1);
+
+	LightParams pointLight_G2;
+	pointLight_G2.type = L_POINT;
+	pointLight_G2.position = Vec3(0.0f, 3.0f, -100.0f);
+	pointLight_G2.color = Vec3(0.8f, 0.8f, 0.1f);
+	pointLight_G2.intensity = 3.0f;
+	addLight(pointLight_G2);
+
+	LightParams pointLight_G3;
+	pointLight_G3.type = L_POINT;
+	pointLight_G3.position = Vec3(10.0f, 3.0f, -100.0f);
+	pointLight_G3.color = Vec3(1.0f, 0.1f, 0.0f);
+	pointLight_G3.intensity = 3.0f;
+	addLight(pointLight_G3);
 }
 
 void SetupFloorLayout()
 {
-
 	// Platform 0
 	CreatePlatform(
 		Vec3(0.0f, 0.0f, -10.0f),				// Position
@@ -426,15 +485,36 @@ void SetupFloorLayout()
 
 	// Platform 3
 	CreatePlatform(
-		Vec3(6.0f, 0.0f, -50.0f),				 // Position
-		Vec3(12.0f, 0.2f, 5.0f),				 // Size
-		CoreMath::FromEuler(0.0f, 0.0f, 40.0f)); // Orientation
+		Vec3(0.0f, -2.0f, -60.0f),				// Position
+		Vec3(10.0f, 0.2f, 20.0f),				//Size
+		CoreMath::FromEuler(0.0f, 0.0f, 0.0f)); // Orientation
 
+
+	// GOAL
 	// Platform 4
 	CreatePlatform(
-		Vec3(-6.0f, 0.0f, -60.0f),				  // Position
-		Vec3(12.0f, 0.2f, 5.0f),				  // Size
-		CoreMath::FromEuler(0.0f, 0.0f, -40.0f)); // Orientation
+		Vec3(0.0f, -2.0f, -100.0f),				// Position
+		Vec3(30.0f, 0.2f, 20.0f),				//Size
+		CoreMath::FromEuler(0.0f, 0.0f, 0.0f)); // Orientation
+
+	// Yeah, walls are not technically "platforms", but it's only to test
+	// Platform 5 (back wall)
+	CreatePlatform(
+		Vec3(0.0f, 1.0f, -110.0f),				// Position
+		Vec3(30.0f, 6.0f, 0.2f),				//Size
+		CoreMath::FromEuler(0.0f, 0.0f, 0.0f)); // Orientation
+
+	// Platform 6 (left wall)
+	CreatePlatform(
+		Vec3(-15.0f, 1.0f, -100.0f),			// Position
+		Vec3(0.2f, 6.0f, 20.0f),				//Size
+		CoreMath::FromEuler(0.0f, 0.0f, 0.0f)); // Orientation
+
+	// Platform 7 (right wall)
+	CreatePlatform(
+		Vec3(15.0f, 1.0f, -100.0f),				// Position
+		Vec3(0.2f, 6.0f, 20.0f),				//Size
+		CoreMath::FromEuler(0.0f, 0.0f, 0.0f)); // Orientation
 }
 
 void CreatePlatform(Vec3 position, Vec3 size, Quaternion orientation)

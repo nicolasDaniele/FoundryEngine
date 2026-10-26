@@ -1,6 +1,8 @@
 add_executable(FoundryEngine
     App.cpp
+    GameplayObjects/GameplayObject.cpp
     GameplayObjects/PlayerObject.cpp
+    GameplayObjects/RotatingPlatform.cpp
 )
 
 set(ENGINE_MODULES GraphicsEngine PhysicsEngine)

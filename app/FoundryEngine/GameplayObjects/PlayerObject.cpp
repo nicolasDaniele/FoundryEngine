@@ -1,40 +1,15 @@
 #include "PlayerObject.h"
-#include "PhysicsEngine/Collisions3D.h" // needed here (not just PhysicsInterfaces.h's forward
-                                          // declaration) because this file actually reads
-                                          // CollisionData::normal below - a forward declaration
-                                          // is only enough for the pointer/reference parameter
-                                          // types in the ICollisionListener interface itself.
+#include "PhysicsEngine/Collisions3D.h"
 
 PlayerObject::PlayerObject(RigidbodyHandle _body, MeshRendererHandle _renderer,
 		IPhysics* _physics, IGraphics* _graphics)
-		: body(_body), renderer(_renderer),
-		physics(_physics), graphics(_graphics)
+	: GameplayObject(_body, _renderer, _physics, _graphics)
 {
-	physics->AddCollisionListenerToRigidbody(_body, this);
 }
 
 bool PlayerObject::IsGrounded() const
 {
 	return isGrounded;
-}
-
-Vec3 PlayerObject::GetPosition() const
-{
-	return position;
-}
-
-Quaternion PlayerObject::GetRotation() const
-{
-	return rotation;
-}
-
-void PlayerObject::Update(float frameTime)
-{
-	position = physics->GetRigidbodyPosition(body);
-	rotation = physics->GetRigidbodyOrientation(body);
-
-	graphics->UpdateMeshRendererPosition(renderer, position);
-	graphics->SetMeshRendererRotation(renderer, rotation);
 }
 
 void PlayerObject::Reset(const Vec3& spawnPosition)
